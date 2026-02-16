@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 
+export const meta = {
+  title: "Spider-Man Tracker",
+  description: "Achievement tracker for Marvel's Spider-Man Remastered",
+  icon: "🕷️",
+};
+
 const ACHIEVEMENTS = [
   // === BASE GAME — STORY ===
   { id: "demons_emerge", name: "Demons Emerge", desc: "Complete Act 1", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after completing all main missions in Act 1." },

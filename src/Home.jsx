@@ -11,13 +11,17 @@ export default function Home({ tools }) {
         </p>
       ) : (
         <div className="grid gap-3 max-w-md">
-          {tools.map(({ slug, name }) => (
+          {tools.map(({ slug, name, description, icon }) => (
             <Link
               key={slug}
               to={`/${slug}`}
-              className="block px-4 py-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-colors"
             >
-              {name}
+              {icon && <span className="text-xl shrink-0">{icon.startsWith('data:') ? <img src={icon} alt="" className="w-6 h-6" /> : icon}</span>}
+              <div>
+                <div className="font-medium">{name}</div>
+                {description && <div className="text-sm text-zinc-400">{description}</div>}
+              </div>
             </Link>
           ))}
         </div>
