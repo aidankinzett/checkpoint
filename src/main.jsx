@@ -8,18 +8,15 @@ import ToolPage from './ToolPage.jsx'
 // Lazy-load tool components
 const toolModules = import.meta.glob('./tools/*.jsx')
 
-// Build tool list, resolving meta at load time
-const tools = Object.entries(toolModules).map(([path, importFn]) => {
-  const filename = path.replace('./tools/', '').replace('.jsx', '')
-  const slug = filename.toLowerCase().replace(/\s+/g, '-')
-  return { slug, filename, path, importFn }
-})
-
-// Resolve meta from each tool eagerly then render
+// Resolve meta from each tool then render
 async function loadMetaAndRender() {
-  const resolved = await Promise.all(
-    tools.map(async ({ slug, filename, path, importFn }) => {
-      const mod = await import(/* @vite-ignore */ path)
+  const tools = await Promise.all(
+    Object.entries(toolModules).map(async ([path, importFn]) => {
+      const filename = path.replace('./tools/', '').replace('.jsx', '')
+      const slug = filename.toLowerCase().replace(/\s+/g, '-')
+      // Import the module to read meta — the result is cached,
+      // so React.lazy(importFn) reuses the same loaded module
+      const mod = await importFn()
       const meta = mod.meta || {}
       const Component = lazy(importFn)
       return {
@@ -36,8 +33,8 @@ async function loadMetaAndRender() {
     <StrictMode>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home tools={resolved} />} />
-          {resolved.map(({ slug, name, icon, Component }) => (
+          <Route path="/" element={<Home tools={tools} />} />
+          {tools.map(({ slug, name, icon, Component }) => (
             <Route
               key={slug}
               path={`/${slug}`}
