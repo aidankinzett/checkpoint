@@ -34,7 +34,7 @@ export default function ToolPage({ title, icon, children }) {
 
     return () => {
       document.title = prevTitle
-      setFavicon('/vite.svg')
+      setFavicon("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>")
     }
   }, [title, icon])
 
