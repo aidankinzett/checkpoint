@@ -120,6 +120,7 @@ export default function SpiderManTracker() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [filterTier, setFilterTier] = useState("all");
   const [showCompleted, setShowCompleted] = useState(true);
+  const [showStory, setShowStory] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({});
@@ -165,6 +166,7 @@ export default function SpiderManTracker() {
     if (activeCategory !== "all" && a.category !== activeCategory) return false;
     if (filterTier !== "all" && a.tier !== filterTier) return false;
     if (!showCompleted && completed[a.id]) return false;
+    if (!showStory && a.guide?.includes("cannot be missed")) return false;
     return true;
   });
 
@@ -286,6 +288,10 @@ export default function SpiderManTracker() {
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <label style={{ fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <input type="checkbox" checked={showStory} onChange={() => setShowStory(!showStory)} style={{ accentColor: "#E23636" }} />
+              Show story
+            </label>
+            <label style={{ fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
               <input type="checkbox" checked={showCompleted} onChange={() => setShowCompleted(!showCompleted)} style={{ accentColor: "#E23636" }} />
               Show completed
             </label>
@@ -342,6 +348,7 @@ export default function SpiderManTracker() {
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#ddd", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ opacity: done ? 0.5 : 1, textDecoration: done ? "line-through" : "none" }}>{a.name}</span>
                     {a.secret && <span style={{ fontSize: 9, fontWeight: 700, color: "#666", background: "#1a1a26", padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>SECRET</span>}
+                    {a.guide?.includes("cannot be missed") && <span style={{ fontSize: 9, fontWeight: 700, color: "#E23636", background: "rgba(226,54,54,0.1)", padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>STORY</span>}
                   </div>
                   <div style={{ fontSize: 12, color: "#888", marginTop: 2, opacity: done ? 0.35 : 0.65 }}>{a.desc}</div>
                 </div>
