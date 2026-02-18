@@ -127,18 +127,16 @@ export default function SpiderManTracker() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    (async () => {
-      try {
-        const result = await window.storage.get(STORAGE_KEY);
-        if (result?.value) setCompleted(JSON.parse(result.value));
-      } catch (e) {}
-      setLoaded(true);
-    })();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) setCompleted(JSON.parse(stored));
+    } catch (e) {}
+    setLoaded(true);
   }, []);
 
-  const saveProgress = useCallback(async (data) => {
+  const saveProgress = useCallback((data) => {
     setSaving(true);
-    try { await window.storage.set(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
     setTimeout(() => setSaving(false), 400);
   }, []);
 
