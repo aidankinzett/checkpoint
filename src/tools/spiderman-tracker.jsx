@@ -115,6 +115,7 @@ const TIER_CONFIG = {
 };
 
 const STORAGE_KEY = "spiderman-achievements";
+const STEAM_PROFILE_KEY = "spiderman-steam-profile";
 
 export default function SpiderManTracker() {
   const [completed, setCompleted] = useState({});
@@ -127,7 +128,9 @@ export default function SpiderManTracker() {
   const [expanded, setExpanded] = useState({});
   const [search, setSearch] = useState("");
   const [showSteamImport, setShowSteamImport] = useState(false);
-  const [steamProfile, setSteamProfile] = useState("");
+  const [steamProfile, setSteamProfile] = useState(() => {
+    try { return localStorage.getItem(STEAM_PROFILE_KEY) || ""; } catch { return ""; }
+  });
   const [importCount, setImportCount] = useState(null);
 
   const steamImport = useMutation({
@@ -160,6 +163,7 @@ export default function SpiderManTracker() {
         saveProgress(next);
       }
       setImportCount(count);
+      try { localStorage.setItem(STEAM_PROFILE_KEY, steamProfile); } catch {}
     },
   });
 
