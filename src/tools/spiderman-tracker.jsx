@@ -123,6 +123,7 @@ export default function SpiderManTracker() {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -160,6 +161,7 @@ export default function SpiderManTracker() {
   };
 
   const filtered = ACHIEVEMENTS.filter((a) => {
+    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (activeCategory !== "all" && a.category !== activeCategory) return false;
     if (filterTier !== "all" && a.tier !== filterTier) return false;
     if (!showCompleted && completed[a.id]) return false;
@@ -250,6 +252,22 @@ export default function SpiderManTracker() {
               }}>{label}</button>
             );
           })}
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search achievements..."
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 6,
+              background: "#111118", border: "1px solid #222", color: "#ddd",
+              fontSize: 14, fontFamily: "'Barlow', sans-serif",
+              outline: "none",
+            }}
+            onFocus={(e) => e.target.style.borderColor = "#E23636"}
+            onBlur={(e) => e.target.style.borderColor = "#222"}
+          />
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1a1a24" }}>
           <div style={{ display: "flex", gap: 6 }}>
