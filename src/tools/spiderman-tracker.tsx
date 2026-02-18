@@ -1,13 +1,32 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { emojiToFavicon, setFavicon } from '~/lib/favicon'
+import { fetchSteamAchievements } from '~/server/steam-achievements'
 
 export const meta = {
-  title: "Spider-Man Tracker",
+  title: 'Spider-Man Tracker',
   description: "Achievement tracker for Marvel's Spider-Man Remastered",
-  icon: "🕷️",
-};
+  icon: '🕷️',
+}
 
-const ACHIEVEMENTS = [
+interface Achievement {
+  id: string
+  name: string
+  desc: string
+  tier: 'gold' | 'silver' | 'bronze'
+  category: string
+  secret?: boolean
+  guide: string
+  steamName?: string
+}
+
+interface TierConfig {
+  label: string
+  color: string
+  icon: string
+}
+
+const ACHIEVEMENTS: Achievement[] = [
   // === BASE GAME — STORY ===
   { id: "demons_emerge", name: "Demons Emerge", desc: "Complete Act 1", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after completing all main missions in Act 1." },
   { id: "six_assemble", name: "The Six Assemble", desc: "Complete Act 2", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after completing all main missions in Act 2." },
@@ -17,7 +36,7 @@ const ACHIEVEMENTS = [
   { id: "grounded", name: "Grounded", desc: "Defeat Electro and Vulture", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after the boss fight against Electro and Vulture during the main story." },
   { id: "sting_smash", name: "Sting and Smash", desc: "Defeat Scorpion and Rhino", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after the boss fight against Scorpion and Rhino during the main story." },
   { id: "shock_awe", name: "Shock and Awe", desc: "Defeat Shocker", tier: "bronze", category: "Story", secret: true, guide: "Story related, cannot be missed. Unlocks after the boss fight against Shocker during the main story." },
-  { id: "tombstone", name: "Tombstone Takedown", desc: "Defeat Tombstone", tier: "bronze", category: "Story", secret: true, guide: "During Act 2, a side mission chain starting with \"Tombstone: On the Move\" becomes available. Complete all missions in this chain, culminating in a one-on-one fight with Tombstone in \"Let's Get Ready To…\"." },
+  { id: "tombstone", name: "Tombstone Takedown", desc: "Defeat Tombstone", tier: "bronze", category: "Story", secret: true, guide: "During Act 2, a side mission chain starting with \"Tombstone: On the Move\" becomes available. Complete all missions in this chain, culminating in a one-on-one fight with Tombstone in \"Let's Get Ready To\u2026\"." },
   { id: "wing_it", name: "Wing It", desc: "Traverse across the city rooftops", tier: "bronze", category: "Story", secret: true, guide: "You need to disturb 500 groups of pigeons (the birds sitting on rooftops) while swinging around New York. This should unlock naturally while playing through the game." },
 
   // === COMPLETION ===
@@ -26,15 +45,15 @@ const ACHIEVEMENTS = [
   { id: "power_responsibility", name: "Power and Responsibility", desc: "Complete a playthrough on Ultimate difficulty", tier: "silver", category: "Completion", guide: "Best done on New Game+ where you keep all your upgrades and skills. You must NOT change the difficulty at any point during the playthrough. Only main story (yellow marker) missions are required." },
   { id: "backpacker", name: "Backpacker", desc: "Collect all Backpacks", tier: "silver", category: "Completion", guide: "There are 55 backpacks scattered across the city. Activate Surveillance Towers to reveal their locations on the map. Each one contains a memento from Peter's past." },
   { id: "cat_prints", name: "Cat Prints", desc: "Track down Black Cat", tier: "silver", category: "Completion", guide: "Complete the mission from Felicia Hardy to unlock locations for all 12 Black Cat Stakeout collectibles on the map. Collect all of them to earn this." },
-  { id: "inner_sanctuary", name: "Inner Sanctuary", desc: "Take down each Demon Warehouse", tier: "silver", category: "Completion", secret: true, guide: "Demon Warehouses unlock during Act 2. They appear as red devil icons on the map. Clear all of them — they are wave-based combat encounters." },
+  { id: "inner_sanctuary", name: "Inner Sanctuary", desc: "Take down each Demon Warehouse", tier: "silver", category: "Completion", secret: true, guide: "Demon Warehouses unlock during Act 2. They appear as red devil icons on the map. Clear all of them \u2014 they are wave-based combat encounters." },
   { id: "all_kings_men", name: "All the King's Men", desc: "Take down each Fisk Hideout", tier: "silver", category: "Completion", secret: true, guide: "Yuri contacts you about Fisk goons operating out of construction sites. Complete the mission and Fisk Hideouts appear on the map. Clear all of them." },
   { id: "mercenary_tactics", name: "Mercenary Tactics", desc: "Take down each Sable Outpost", tier: "silver", category: "Completion", secret: true, guide: "Sable Outposts unlock during Act 3. They appear as red Sable logos on the map. These are tougher combat encounters with Sable International troops." },
   { id: "back_slammer", name: "Back in the Slammer", desc: "Take down each Prisoner Camp", tier: "silver", category: "Completion", secret: true, guide: "Prisoner Camps unlock during Act 3. They appear as red barbed wire icons on the map. Clear all of them." },
-  { id: "neighborhood_watch", name: "Neighborhood Watch", steamName: "Neighbourhood Watch", desc: "Complete all Faction Crimes in a district", tier: "silver", category: "Completion", guide: "Central Park is the easiest spot — only Thug Crimes appear there. Swing back and forth looking for crime events until you've completed all 5 in one district." },
+  { id: "neighborhood_watch", name: "Neighborhood Watch", steamName: "Neighbourhood Watch", desc: "Complete all Faction Crimes in a district", tier: "silver", category: "Completion", guide: "Central Park is the easiest spot \u2014 only Thug Crimes appear there. Swing back and forth looking for crime events until you've completed all 5 in one district." },
   { id: "suit_all_seasons", name: "A Suit For All Seasons", desc: "Purchase all Suits", tier: "silver", category: "Completion", guide: "Purchase all base game suits (DLC suits don't count). Most unlock through story progression and side activities. Use tokens earned from side content to buy them from the Suits tab." },
   { id: "schooled", name: "Schooled", desc: "Complete all Corrupted Student missions", tier: "silver", category: "Completion", secret: true, guide: "Available during Act 2. All 5 missions start at Empire State University from a student named Philip Chang. Complete his entire mission chain." },
-  { id: "full_arsenal", name: "Full Arsenal", desc: "Max out all Gadgets", tier: "silver", category: "Completion", guide: "Max out all 8 gadgets (34 total upgrades). Don't force this early — focus on 100% district completion first to earn most tokens needed. The DLC provides extra tokens too." },
-  { id: "friendly_neighborhood", name: "Friendly Neighborhood Spider-Man", steamName: "Friendly Neighbourhood Spider-Man", desc: "Complete all Side Missions", tier: "bronze", category: "Completion", guide: "Side missions appear on the map as you progress through the main campaign. Complete all of them — they can be done at any time." },
+  { id: "full_arsenal", name: "Full Arsenal", desc: "Max out all Gadgets", tier: "silver", category: "Completion", guide: "Max out all 8 gadgets (34 total upgrades). Don't force this early \u2014 focus on 100% district completion first to earn most tokens needed. The DLC provides extra tokens too." },
+  { id: "friendly_neighborhood", name: "Friendly Neighborhood Spider-Man", steamName: "Friendly Neighbourhood Spider-Man", desc: "Complete all Side Missions", tier: "bronze", category: "Completion", guide: "Side missions appear on the map as you progress through the main campaign. Complete all of them \u2014 they can be done at any time." },
   { id: "amazing_coverage", name: "Amazing Coverage", desc: "All Surveillance Towers activated", tier: "bronze", category: "Completion", guide: "Given early by Yuri Watanabe. Interact with towers across the city and complete the wavelength-matching minigame. Essential for revealing collectibles on the map." },
   { id: "rd", name: "R&D", desc: "Complete all Research Stations", tier: "bronze", category: "Completion", guide: "Harry Osborne's research stations appear as purple microscope icons on the map. Each involves a unique puzzle or mini-challenge. Complete all of them." },
   { id: "pigeon_hunter", name: "Pigeon Hunter", desc: "Catch all of Howard's Pigeons", tier: "bronze", category: "Completion", secret: true, guide: "Start the \"Helping Howard\" side quest from a rooftop near the F.E.A.S.T. Center. This unlocks pigeon locations (pale blue bird icons) on the map. Chase and catch all of them." },
@@ -43,7 +62,7 @@ const ACHIEVEMENTS = [
 
   // === CHALLENGES ===
   { id: "master_masters", name: "Master of Masters", desc: "Defeat Taskmaster", tier: "silver", category: "Challenges", secret: true, guide: "After completing some Taskmaster Challenges, Taskmaster attacks you mid-swing. He flees after a short fight, then fights you for real after you complete all 16 challenges. Defeat him the second time." },
-  { id: "grinding_all_way", name: "Grinding All the Way", desc: "Max out one Benchmark type", tier: "silver", category: "Challenges", guide: "Check the Benchmarks tab in the pause menu. Get any single benchmark to Tier 3 (max). The parkour benchmark (flipping over obstacles while running) is one of the easiest — just run down a road vaulting over cars." },
+  { id: "grinding_all_way", name: "Grinding All the Way", desc: "Max out one Benchmark type", tier: "silver", category: "Challenges", guide: "Check the Benchmarks tab in the pause menu. Get any single benchmark to Tier 3 (max). The parkour benchmark (flipping over obstacles while running) is one of the easiest \u2014 just run down a road vaulting over cars." },
   { id: "masters_education", name: "Master's Education", desc: "Achieve Ultimate on a Taskmaster Challenge", tier: "silver", category: "Challenges", guide: "Get a gold (Ultimate) ranking in any of the 16 Taskmaster Challenges. Easier with late-game upgrades. Combat and Bomb challenges tend to be the most forgiving." },
   { id: "short_fuse", name: "Short Fuse", desc: "Get Spectacular or better in a Taskmaster Bomb Challenge", tier: "bronze", category: "Challenges", secret: true, guide: "Challenges unlock during Act 2 (orange circular icons on map). Complete any Bomb Challenge with at least Spectacular (silver) rank. Focus on efficient web-swinging between bombs." },
   { id: "fists_fury", name: "Fists of Fury", desc: "Get Spectacular or better in a Taskmaster Combat Challenge", tier: "bronze", category: "Challenges", secret: true, guide: "Complete any Combat Challenge with at least Spectacular (silver) rank. Use varied attacks, gadgets, and finishers for higher scores." },
@@ -59,8 +78,8 @@ const ACHIEVEMENTS = [
   { id: "untouchable", name: "The Untouchable Spider-Man", desc: "Complete any Enemy Base without taking damage", tier: "silver", category: "Combat & Skills", guide: "Set difficulty to Friendly Neighbourhood. Try a Fisk Hideout (construction zone). Use stealth for wave 1, then dodge everything. The \"Equaliser\" suit ability makes enemies die in one hit, which helps a lot." },
   { id: "science_ftw", name: "Science FTW!", desc: "Craft 15 Upgrades", tier: "bronze", category: "Combat & Skills", guide: "Open the Gadgets tab and use tokens to craft upgrades for any gadgets. Craft 15 total upgrades across all gadgets." },
   { id: "scientific_method", name: "The Scientific Method", desc: "Craft your first Upgrade", tier: "bronze", category: "Combat & Skills", guide: "Once the Gadgets tab unlocks, select any gadget and craft one upgrade using tokens earned from side content." },
-  { id: "hug_it_out", name: "Hug It Out", desc: "Knock together 10 pairs of enemies with Trip Mines", tier: "bronze", category: "Combat & Skills", secret: true, guide: "Trip Mine unlocks in Act 2. Shoot a Trip Mine at an enemy and it will web them to the nearest enemy or wall. You need 10 enemy-to-enemy pairs. Works best in large groups — shoot a Trip Mine at one enemy and make sure another is nearby." },
-  { id: "spider_sensible", name: "Spider-Sensible", desc: "Perfect Dodge 10 attacks", tier: "bronze", category: "Combat & Skills", guide: "When attacked, a white flash appears above your head. Wait until the last second — when the flash turns blue — then dodge. That's a Perfect Dodge. Do this 10 times total (cumulative)." },
+  { id: "hug_it_out", name: "Hug It Out", desc: "Knock together 10 pairs of enemies with Trip Mines", tier: "bronze", category: "Combat & Skills", secret: true, guide: "Trip Mine unlocks in Act 2. Shoot a Trip Mine at an enemy and it will web them to the nearest enemy or wall. You need 10 enemy-to-enemy pairs. Works best in large groups \u2014 shoot a Trip Mine at one enemy and make sure another is nearby." },
+  { id: "spider_sensible", name: "Spider-Sensible", desc: "Perfect Dodge 10 attacks", tier: "bronze", category: "Combat & Skills", guide: "When attacked, a white flash appears above your head. Wait until the last second \u2014 when the flash turns blue \u2014 then dodge. That's a Perfect Dodge. Do this 10 times total (cumulative)." },
   { id: "arachnophobia", name: "Arachnophobia", desc: "Perform 75 Stealth Takedowns", tier: "bronze", category: "Combat & Skills", guide: "When undetected, a purple or green indicator appears over enemies. Press the takedown button to silently take them out. Do this 75 times total (cumulative across all encounters)." },
   { id: "overdrive", name: "Overdrive", desc: "Complete 10 Vehicle Takedowns", tier: "bronze", category: "Combat & Skills", guide: "Vehicle takedowns occur during car chase crime events. Some happen in the story, but most come from random Crime activities. You'll likely get this naturally while going for 100% district completion." },
 
@@ -69,7 +88,7 @@ const ACHIEVEMENTS = [
   { id: "hero_higher", name: "Hero for Higher", desc: "Perch atop Avengers Tower", tier: "bronze", category: "Exploration", guide: "Find Avengers Tower in the Upper East Side district. Climb to the very top of one of the building's two tips. Peter will do a perched pose when you reach the right spot." },
   { id: "born_ride", name: "Born to Ride", desc: "Ride the Subway 5 times", tier: "bronze", category: "Exploration", guide: "Fast travel by holding the interact button over a fast-travel icon on the map. Do this 5 times. Fast travel unlocks after activating surveillance towers." },
   { id: "sticky_tricky", name: "Sticky and Tricky", desc: "Chain 4 unique tricks before landing", tier: "bronze", category: "Exploration", guide: "Jump from a very tall building (like Avengers Tower) and perform 4 different tricks while falling before you land or web-swing. Each trick must be unique." },
-  { id: "snappy_dresser", name: "Snappy Dresser", desc: "Wear 5 new Spider-Suits", tier: "bronze", category: "Exploration", secret: true, guide: "Simply equip 5 different suits from the Suits tab. You don't need to own them all — just wear 5 different ones." },
+  { id: "snappy_dresser", name: "Snappy Dresser", desc: "Wear 5 new Spider-Suits", tier: "bronze", category: "Exploration", secret: true, guide: "Simply equip 5 different suits from the Suits tab. You don't need to own them all \u2014 just wear 5 different ones." },
   { id: "lost_found", name: "Lost and Found", desc: "Collect 5 Backpacks", tier: "bronze", category: "Exploration", guide: "Activate Surveillance Towers to reveal backpack locations on the map. Collect any 5 of the 55 total backpacks." },
   { id: "spiderman_about_town", name: "Spider-Man About Town", desc: "Greet 10 citizens", tier: "bronze", category: "Exploration", guide: "Citizens with a white circle above their head will greet you. Approach them and press the prompted button to interact. Do this 10 times while swinging around the city." },
   { id: "cats_out_bag", name: "Cat's Out of the Bag", desc: "Collect a Black Cat collectible", tier: "bronze", category: "Exploration", guide: "Find and collect any one of the Black Cat Stakeout collectibles. Some appear naturally during the story; others are revealed on the map after the initial Black Cat mission." },
@@ -81,7 +100,7 @@ const ACHIEVEMENTS = [
   { id: "cat_came_back", name: "The Cat Came Back", desc: "Complete \"The Maria\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the main mission \"The Maria\" in The Heist DLC." },
   { id: "here_kitty", name: "Here Kitty-Kitty", desc: "Complete the Black Cat chase", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Story related, cannot be missed. Unlocks after completing the Black Cat chase sequence during The Heist." },
   { id: "bye_felicia", name: "Bye Felicia", desc: "Complete the \"Follow the Money\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the final story mission \"Follow the Money\" in The Heist." },
-  { id: "long_con", name: "The Long Con", desc: "Complete the \"Like a Fiddle\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Midway through The Heist, Detective Mackey contacts you. Collect all 10 Stolen Paintings that appear on the map. After collecting them all, a mission appears at his precinct — complete it." },
+  { id: "long_con", name: "The Long Con", desc: "Complete the \"Like a Fiddle\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Midway through The Heist, Detective Mackey contacts you. Collect all 10 Stolen Paintings that appear on the map. After collecting them all, a mission appears at his precinct \u2014 complete it." },
   { id: "disorganized_crime", name: "Disorganized Crime", steamName: "Disorganised Crime", desc: "Complete all Crimes in a district", tier: "bronze", category: "DLC: The Heist", guide: "Complete all 5 Maggia Crime events in any single district. Maggia crimes unlock after the first Heist mission and appear randomly like main game crimes." },
 
   // === DLC: TURF WARS ===
@@ -100,125 +119,131 @@ const ACHIEVEMENTS = [
   { id: "unplugged", name: "Unplugged", desc: "Complete the Screwball chase", tier: "bronze", category: "DLC: Silver Lining", secret: true, guide: "After completing all 5 Screwball Challenges, a side mission unlocks where you chase Screwball. Complete it." },
   { id: "terminated", name: "Terminated", desc: "Complete the \"One Plus One Equals Win\" mission", tier: "bronze", category: "DLC: Silver Lining", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the \"One Plus One Equals Win\" mission in Silver Lining." },
   { id: "wages_war", name: "The Wages of War", desc: "Complete the \"Aiding a Human\" mission", tier: "bronze", category: "DLC: Silver Lining", secret: true, guide: "Complete all 3 Olympus Hideout bases (tracked on map), then a new mission appears at the docks in the Financial District. Complete it." },
-  { id: "unacceptable", name: "Unacceptable", desc: "Complete the \"Scales of Justice\" mission", tier: "bronze", category: "DLC: Silver Lining", guide: "Near the end of the DLC, find yellow tape leading to the first of 9 voice recorders. Collect it and the rest appear on the map (light blue magnifying glass icons). Collect all 9 to unlock a side mission — complete it." },
-];
+  { id: "unacceptable", name: "Unacceptable", desc: "Complete the \"Scales of Justice\" mission", tier: "bronze", category: "DLC: Silver Lining", guide: "Near the end of the DLC, find yellow tape leading to the first of 9 voice recorders. Collect it and the rest appear on the map (light blue magnifying glass icons). Collect all 9 to unlock a side mission \u2014 complete it." },
+]
 
 const CATEGORIES = [
   "Story", "Completion", "Challenges", "Combat & Skills", "Exploration",
   "DLC: The Heist", "DLC: Turf Wars", "DLC: Silver Lining"
-];
+]
 
-const TIER_CONFIG = {
-  gold: { label: "Gold", color: "#F5C518", icon: "🏆" },
-  silver: { label: "Silver", color: "#A8B4C0", icon: "🥈" },
-  bronze: { label: "Bronze", color: "#CD7F32", icon: "🥉" },
-};
+const TIER_CONFIG: Record<string, TierConfig> = {
+  gold: { label: "Gold", color: "#F5C518", icon: "\u{1F3C6}" },
+  silver: { label: "Silver", color: "#A8B4C0", icon: "\u{1F948}" },
+  bronze: { label: "Bronze", color: "#CD7F32", icon: "\u{1F949}" },
+}
 
-const STORAGE_KEY = "spiderman-achievements";
-const STEAM_PROFILE_KEY = "spiderman-steam-profile";
+const STORAGE_KEY = "spiderman-achievements"
+const STEAM_PROFILE_KEY = "spiderman-steam-profile"
 
 export default function SpiderManTracker() {
-  const [completed, setCompleted] = useState({});
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [filterTier, setFilterTier] = useState("all");
-  const [showCompleted, setShowCompleted] = useState(true);
-  const [showStory, setShowStory] = useState(true);
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState({});
-  const [search, setSearch] = useState("");
-  const [showSteamImport, setShowSteamImport] = useState(false);
+  const [completed, setCompleted] = useState<Record<string, boolean>>({})
+  const [activeCategory, setActiveCategory] = useState("all")
+  const [filterTier, setFilterTier] = useState("all")
+  const [showCompleted, setShowCompleted] = useState(true)
+  const [showStory, setShowStory] = useState(true)
+  const [loaded, setLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [search, setSearch] = useState("")
+  const [showSteamImport, setShowSteamImport] = useState(false)
   const [steamProfile, setSteamProfile] = useState(() => {
-    try { return localStorage.getItem(STEAM_PROFILE_KEY) || ""; } catch { return ""; }
-  });
-  const [importCount, setImportCount] = useState(null);
+    try { return localStorage.getItem(STEAM_PROFILE_KEY) || "" } catch { return "" }
+  })
+  const [importCount, setImportCount] = useState<number | null>(null)
+
+  // Favicon effect
+  useEffect(() => {
+    const href = emojiToFavicon('\u{1F577}\u{FE0F}')
+    setFavicon(href)
+    return () => {
+      setFavicon("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>\u{1F6E0}\u{FE0F}</text></svg>")
+    }
+  }, [])
 
   const steamImport = useMutation({
-    mutationFn: async (profile) => {
-      const res = await fetch(`/api/steam-achievements?profile=${encodeURIComponent(profile)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch achievements");
-      return data.achievements;
+    mutationFn: async (profile: string) => {
+      return fetchSteamAchievements({ data: { profile } })
     },
     onSuccess: (achievements) => {
-      const steamNameMap = {};
+      const steamNameMap: Record<string, string> = {}
       ACHIEVEMENTS.forEach((a) => {
-        const key = (a.steamName || a.name).toLowerCase();
-        steamNameMap[key] = a.id;
-      });
+        const key = (a.steamName || a.name).toLowerCase()
+        steamNameMap[key] = a.id
+      })
 
-      let count = 0;
-      const next = { ...completed };
+      let count = 0
+      const next = { ...completed }
       achievements.forEach((sa) => {
-        if (!sa.achieved) return;
-        const id = steamNameMap[sa.name.toLowerCase()];
+        if (!sa.achieved) return
+        const id = steamNameMap[sa.name.toLowerCase()]
         if (id && !next[id]) {
-          next[id] = true;
-          count++;
+          next[id] = true
+          count++
         }
-      });
+      })
 
       if (count > 0) {
-        setCompleted(next);
-        saveProgress(next);
+        setCompleted(next)
+        saveProgress(next)
       }
-      setImportCount(count);
-      try { localStorage.setItem(STEAM_PROFILE_KEY, steamProfile); } catch {}
+      setImportCount(count)
+      try { localStorage.setItem(STEAM_PROFILE_KEY, steamProfile) } catch {}
     },
-  });
+  })
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setCompleted(JSON.parse(stored));
-    } catch (e) {}
-    setLoaded(true);
-  }, []);
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) setCompleted(JSON.parse(stored))
+    } catch {}
+    setLoaded(true)
+  }, [])
 
-  const saveProgress = useCallback((data) => {
-    setSaving(true);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-    setTimeout(() => setSaving(false), 400);
-  }, []);
+  const saveProgress = useCallback((data: Record<string, boolean>) => {
+    setSaving(true)
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch {}
+    setTimeout(() => setSaving(false), 400)
+  }, [])
 
-  const toggleAchievement = (id, e) => {
-    e.stopPropagation();
-    const next = { ...completed, [id]: !completed[id] };
-    if (!next[id]) delete next[id];
-    setCompleted(next);
-    saveProgress(next);
-  };
+  const toggleAchievement = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const next = { ...completed, [id]: !completed[id] }
+    if (!next[id]) delete next[id]
+    setCompleted(next)
+    saveProgress(next)
+  }
 
-  const toggleExpanded = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   const resetAll = () => {
     if (confirm("Reset all progress? This cannot be undone.")) {
-      setCompleted({});
-      saveProgress({});
+      setCompleted({})
+      saveProgress({})
     }
-  };
+  }
 
   const filtered = ACHIEVEMENTS.filter((a) => {
-    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (activeCategory !== "all" && a.category !== activeCategory) return false;
-    if (filterTier !== "all" && a.tier !== filterTier) return false;
-    if (!showCompleted && completed[a.id]) return false;
-    if (!showStory && a.guide?.includes("cannot be missed")) return false;
-    return true;
-  });
+    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (activeCategory !== "all" && a.category !== activeCategory) return false
+    if (filterTier !== "all" && a.tier !== filterTier) return false
+    if (!showCompleted && completed[a.id]) return false
+    if (!showStory && a.guide?.includes("cannot be missed")) return false
+    return true
+  })
 
-  const totalCount = ACHIEVEMENTS.length;
-  const completedCount = Object.keys(completed).length;
-  const pct = Math.round((completedCount / totalCount) * 100);
+  const totalCount = ACHIEVEMENTS.length
+  const completedCount = Object.keys(completed).length
+  const pct = Math.round((completedCount / totalCount) * 100)
 
-  const catCounts = {};
+  const catCounts: Record<string, { total: number; done: number }> = {}
   CATEGORIES.forEach((cat) => {
-    const total = ACHIEVEMENTS.filter((a) => a.category === cat).length;
-    const done = ACHIEVEMENTS.filter((a) => a.category === cat && completed[a.id]).length;
-    catCounts[cat] = { total, done };
-  });
+    const total = ACHIEVEMENTS.filter((a) => a.category === cat).length
+    const done = ACHIEVEMENTS.filter((a) => a.category === cat && completed[a.id]).length
+    catCounts[cat] = { total, done }
+  })
 
   if (!loaded) {
     return (
@@ -226,12 +251,11 @@ export default function SpiderManTracker() {
         <div style={{ width: 40, height: 40, border: "3px solid #222", borderTop: "3px solid #E23636", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <p style={{ color: "#E23636", fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 2 }}>LOADING...</p>
       </div>
-    );
+    )
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#E8E8E8", fontFamily: "'Barlow', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
@@ -269,7 +293,7 @@ export default function SpiderManTracker() {
             </div>
             {pct === 100 && (
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 3, color: "#F5C518", textAlign: "center", marginTop: 14, textShadow: "0 0 20px rgba(245,197,24,0.4)", animation: "pulse 2s ease-in-out infinite" }}>
-                🕷️ BE GREATER — PLATINUM UNLOCKED! 🕷️
+                {'\u{1F577}\u{FE0F}'} BE GREATER — PLATINUM UNLOCKED! {'\u{1F577}\u{FE0F}'}
               </div>
             )}
           </div>
@@ -280,9 +304,9 @@ export default function SpiderManTracker() {
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px 20px 0" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
           {["all", ...CATEGORIES].map((cat) => {
-            const isAll = cat === "all";
-            const active = activeCategory === cat;
-            const label = isAll ? `ALL (${completedCount}/${totalCount})` : `${cat.toUpperCase()} (${catCounts[cat].done}/${catCounts[cat].total})`;
+            const isAll = cat === "all"
+            const active = activeCategory === cat
+            const label = isAll ? `ALL (${completedCount}/${totalCount})` : `${cat.toUpperCase()} (${catCounts[cat].done}/${catCounts[cat].total})`
             return (
               <button key={cat} className="cat-btn" onClick={() => setActiveCategory(cat)} style={{
                 background: active ? "rgba(226,54,54,0.12)" : "#111118",
@@ -291,7 +315,7 @@ export default function SpiderManTracker() {
                 padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                 fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, cursor: "pointer",
               }}>{label}</button>
-            );
+            )
           })}
         </div>
         <div style={{ marginBottom: 10 }}>
@@ -306,14 +330,14 @@ export default function SpiderManTracker() {
               fontSize: 14, fontFamily: "'Barlow', sans-serif",
               outline: "none",
             }}
-            onFocus={(e) => e.target.style.borderColor = "#E23636"}
-            onBlur={(e) => e.target.style.borderColor = "#222"}
+            onFocus={(e) => { e.target.style.borderColor = "#E23636" }}
+            onBlur={(e) => { e.target.style.borderColor = "#222" }}
           />
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1a1a24" }}>
           <div style={{ display: "flex", gap: 6 }}>
-            {["all", "gold", "silver", "bronze"].map((t) => {
-              const active = filterTier === t;
+            {(["all", "gold", "silver", "bronze"] as const).map((t) => {
+              const active = filterTier === t
               return (
                 <button key={t} onClick={() => setFilterTier(t)} style={{
                   background: active ? "rgba(226,54,54,0.08)" : "transparent",
@@ -322,7 +346,7 @@ export default function SpiderManTracker() {
                   padding: "5px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600,
                   fontFamily: "'Barlow', sans-serif", cursor: "pointer",
                 }}>{t === "all" ? "ALL TIERS" : `${TIER_CONFIG[t].icon} ${TIER_CONFIG[t].label.toUpperCase()}`}</button>
-              );
+              )
             })}
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -335,7 +359,7 @@ export default function SpiderManTracker() {
               Show completed
             </label>
             <button onClick={resetAll} style={{ background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}>RESET ALL</button>
-            <button onClick={() => { setShowSteamImport(!showSteamImport); setImportCount(null); }} style={{
+            <button onClick={() => { setShowSteamImport(!showSteamImport); setImportCount(null) }} style={{
               background: showSteamImport ? "rgba(102,192,244,0.1)" : "transparent",
               border: `1px solid ${showSteamImport ? "rgba(102,192,244,0.4)" : "#333"}`,
               color: showSteamImport ? "#66C0F4" : "#555",
@@ -352,14 +376,14 @@ export default function SpiderManTracker() {
                 value={steamProfile}
                 onChange={(e) => setSteamProfile(e.target.value)}
                 placeholder="Steam profile URL, vanity name, or ID..."
-                onKeyDown={(e) => { if (e.key === "Enter" && steamProfile.trim()) steamImport.mutate(steamProfile.trim()); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && steamProfile.trim()) steamImport.mutate(steamProfile.trim()) }}
                 style={{
                   flex: 1, padding: "8px 12px", borderRadius: 6,
                   background: "#0a0a0f", border: "1px solid #222", color: "#ddd",
                   fontSize: 13, fontFamily: "'Barlow', sans-serif", outline: "none",
                 }}
-                onFocus={(e) => e.target.style.borderColor = "#66C0F4"}
-                onBlur={(e) => e.target.style.borderColor = "#222"}
+                onFocus={(e) => { e.target.style.borderColor = "#66C0F4" }}
+                onBlur={(e) => { e.target.style.borderColor = "#222" }}
               />
               <button
                 onClick={() => steamProfile.trim() && steamImport.mutate(steamProfile.trim())}
@@ -381,7 +405,7 @@ export default function SpiderManTracker() {
             )}
             {steamImport.isSuccess && (
               <div style={{ marginTop: 10, fontSize: 12, color: "#4ade80", background: "rgba(74,222,128,0.08)", padding: "8px 12px", borderRadius: 6 }}>
-                {importCount > 0 ? `Imported ${importCount} new achievement${importCount !== 1 ? "s" : ""} from Steam!` : "No new achievements to import — you're already up to date!"}
+                {importCount !== null && importCount > 0 ? `Imported ${importCount} new achievement${importCount !== 1 ? "s" : ""} from Steam!` : "No new achievements to import \u2014 you're already up to date!"}
               </div>
             )}
             <div style={{ marginTop: 8, fontSize: 11, color: "#555" }}>
@@ -395,13 +419,13 @@ export default function SpiderManTracker() {
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 40px" }}>
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: 40, color: "#555", fontSize: 14 }}>
-            {!showCompleted && completedCount > 0 ? "🕸️ All visible achievements completed! Toggle 'Show completed' to see them." : "No achievements match this filter."}
+            {!showCompleted && completedCount > 0 ? "\u{1F578}\u{FE0F} All visible achievements completed! Toggle 'Show completed' to see them." : "No achievements match this filter."}
           </div>
         )}
         {filtered.map((a) => {
-          const done = !!completed[a.id];
-          const tier = TIER_CONFIG[a.tier];
-          const isOpen = !!expanded[a.id];
+          const done = !!completed[a.id]
+          const tier = TIER_CONFIG[a.tier]
+          const isOpen = !!expanded[a.id]
           return (
             <div key={a.id} style={{ marginBottom: 4 }}>
               {/* Achievement Row */}
@@ -471,17 +495,17 @@ export default function SpiderManTracker() {
                 </div>
               )}
             </div>
-          );
+          )
         })}
       </div>
 
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid #1a1a24", padding: "16px 20px", marginTop: 20 }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#555", flexWrap: "wrap", gap: 8 }}>
-          <span>🕷️ Progress saves automatically · Tap any row to see how to unlock it</span>
+          <span>{'\u{1F577}\u{FE0F}'} Progress saves automatically · Tap any row to see how to unlock it</span>
           <span style={{ opacity: 0.4 }}>{totalCount} achievements · Base game + City That Never Sleeps DLC</span>
         </div>
       </footer>
     </div>
-  );
+  )
 }
