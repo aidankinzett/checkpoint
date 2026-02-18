@@ -1,9 +1,12 @@
 import React, { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import Home from './Home.jsx'
 import ToolPage from './ToolPage.jsx'
+
+const queryClient = new QueryClient()
 
 // Lazy-load tool components
 const toolModules = import.meta.glob('./tools/*.jsx')
@@ -31,24 +34,26 @@ async function loadMetaAndRender() {
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home tools={tools} />} />
-          {tools.map(({ slug, name, icon, Component }) => (
-            <Route
-              key={slug}
-              path={`/${slug}`}
-              element={
-                <Suspense fallback={<div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 text-center">Loading...</div>}>
-                  <ToolPage title={name} icon={icon}>
-                    <Component />
-                  </ToolPage>
-                </Suspense>
-              }
-            />
-          ))}
-        </Routes>
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home tools={tools} />} />
+            {tools.map(({ slug, name, icon, Component }) => (
+              <Route
+                key={slug}
+                path={`/${slug}`}
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 text-center">Loading...</div>}>
+                    <ToolPage title={name} icon={icon}>
+                      <Component />
+                    </ToolPage>
+                  </Suspense>
+                }
+              />
+            ))}
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
     </StrictMode>,
   )
 }

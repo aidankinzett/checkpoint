@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 export const meta = {
   title: "Spider-Man Tracker",
@@ -29,11 +30,11 @@ const ACHIEVEMENTS = [
   { id: "all_kings_men", name: "All the King's Men", desc: "Take down each Fisk Hideout", tier: "silver", category: "Completion", secret: true, guide: "Yuri contacts you about Fisk goons operating out of construction sites. Complete the mission and Fisk Hideouts appear on the map. Clear all of them." },
   { id: "mercenary_tactics", name: "Mercenary Tactics", desc: "Take down each Sable Outpost", tier: "silver", category: "Completion", secret: true, guide: "Sable Outposts unlock during Act 3. They appear as red Sable logos on the map. These are tougher combat encounters with Sable International troops." },
   { id: "back_slammer", name: "Back in the Slammer", desc: "Take down each Prisoner Camp", tier: "silver", category: "Completion", secret: true, guide: "Prisoner Camps unlock during Act 3. They appear as red barbed wire icons on the map. Clear all of them." },
-  { id: "neighborhood_watch", name: "Neighborhood Watch", desc: "Complete all Faction Crimes in a district", tier: "silver", category: "Completion", guide: "Central Park is the easiest spot — only Thug Crimes appear there. Swing back and forth looking for crime events until you've completed all 5 in one district." },
+  { id: "neighborhood_watch", name: "Neighborhood Watch", steamName: "Neighbourhood Watch", desc: "Complete all Faction Crimes in a district", tier: "silver", category: "Completion", guide: "Central Park is the easiest spot — only Thug Crimes appear there. Swing back and forth looking for crime events until you've completed all 5 in one district." },
   { id: "suit_all_seasons", name: "A Suit For All Seasons", desc: "Purchase all Suits", tier: "silver", category: "Completion", guide: "Purchase all base game suits (DLC suits don't count). Most unlock through story progression and side activities. Use tokens earned from side content to buy them from the Suits tab." },
   { id: "schooled", name: "Schooled", desc: "Complete all Corrupted Student missions", tier: "silver", category: "Completion", secret: true, guide: "Available during Act 2. All 5 missions start at Empire State University from a student named Philip Chang. Complete his entire mission chain." },
   { id: "full_arsenal", name: "Full Arsenal", desc: "Max out all Gadgets", tier: "silver", category: "Completion", guide: "Max out all 8 gadgets (34 total upgrades). Don't force this early — focus on 100% district completion first to earn most tokens needed. The DLC provides extra tokens too." },
-  { id: "friendly_neighborhood", name: "Friendly Neighborhood Spider-Man", desc: "Complete all Side Missions", tier: "bronze", category: "Completion", guide: "Side missions appear on the map as you progress through the main campaign. Complete all of them — they can be done at any time." },
+  { id: "friendly_neighborhood", name: "Friendly Neighborhood Spider-Man", steamName: "Friendly Neighbourhood Spider-Man", desc: "Complete all Side Missions", tier: "bronze", category: "Completion", guide: "Side missions appear on the map as you progress through the main campaign. Complete all of them — they can be done at any time." },
   { id: "amazing_coverage", name: "Amazing Coverage", desc: "All Surveillance Towers activated", tier: "bronze", category: "Completion", guide: "Given early by Yuri Watanabe. Interact with towers across the city and complete the wavelength-matching minigame. Essential for revealing collectibles on the map." },
   { id: "rd", name: "R&D", desc: "Complete all Research Stations", tier: "bronze", category: "Completion", guide: "Harry Osborne's research stations appear as purple microscope icons on the map. Each involves a unique puzzle or mini-challenge. Complete all of them." },
   { id: "pigeon_hunter", name: "Pigeon Hunter", desc: "Catch all of Howard's Pigeons", tier: "bronze", category: "Completion", secret: true, guide: "Start the \"Helping Howard\" side quest from a rooftop near the F.E.A.S.T. Center. This unlocks pigeon locations (pale blue bird icons) on the map. Chase and catch all of them." },
@@ -81,14 +82,14 @@ const ACHIEVEMENTS = [
   { id: "here_kitty", name: "Here Kitty-Kitty", desc: "Complete the Black Cat chase", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Story related, cannot be missed. Unlocks after completing the Black Cat chase sequence during The Heist." },
   { id: "bye_felicia", name: "Bye Felicia", desc: "Complete the \"Follow the Money\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the final story mission \"Follow the Money\" in The Heist." },
   { id: "long_con", name: "The Long Con", desc: "Complete the \"Like a Fiddle\" mission", tier: "bronze", category: "DLC: The Heist", secret: true, guide: "Midway through The Heist, Detective Mackey contacts you. Collect all 10 Stolen Paintings that appear on the map. After collecting them all, a mission appears at his precinct — complete it." },
-  { id: "disorganized_crime", name: "Disorganized Crime", desc: "Complete all Crimes in a district", tier: "bronze", category: "DLC: The Heist", guide: "Complete all 5 Maggia Crime events in any single district. Maggia crimes unlock after the first Heist mission and appear randomly like main game crimes." },
+  { id: "disorganized_crime", name: "Disorganized Crime", steamName: "Disorganised Crime", desc: "Complete all Crimes in a district", tier: "bronze", category: "DLC: The Heist", guide: "Complete all 5 Maggia Crime events in any single district. Maggia crimes unlock after the first Heist mission and appear randomly like main game crimes." },
 
   // === DLC: TURF WARS ===
   { id: "city_family", name: "The City is My Family", desc: "100% Complete CTNS: Turf Wars", tier: "gold", category: "DLC: Turf Wars", guide: "100% every district in the Turf Wars DLC. Complete all Hammerhead Front bases, Crime events, Screwball Challenges, side missions, and main missions. Track via the map." },
   { id: "turning_screw", name: "Turning the Screw", desc: "Get Spectacular or better in all Screwball Challenges", tier: "silver", category: "DLC: Turf Wars", guide: "Screwball contacts you midway through Turf Wars. Complete all 5 challenges with at least Spectacular (silver) rank." },
   { id: "pulling_trigger", name: "Pulling the Trigger", desc: "Complete the \"Blindsided\" mission", tier: "bronze", category: "DLC: Turf Wars", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the \"Blindsided\" mission in Turf Wars." },
   { id: "crossing_line", name: "Crossing the Thin Blue Line", desc: "Complete the \"Lockup\" mission", tier: "bronze", category: "DLC: Turf Wars", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the \"Lockup\" mission in Turf Wars." },
-  { id: "steel_skull", name: "Steel Skull, Glass Jaw", desc: "Complete the \"Bring the Hammer Down\" mission", tier: "bronze", category: "DLC: Turf Wars", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the final story mission \"Bring the Hammer Down\" in Turf Wars." },
+  { id: "steel_skull", name: "Steel Skull, Glass Jaw", steamName: "Steel Skull Glass Jaw", desc: "Complete the \"Bring the Hammer Down\" mission", tier: "bronze", category: "DLC: Turf Wars", secret: true, guide: "Story related, cannot be missed. Unlocks upon completing the final story mission \"Bring the Hammer Down\" in Turf Wars." },
   { id: "prohibition", name: "Prohibition", desc: "Take down each Hammerhead Front", tier: "bronze", category: "DLC: Turf Wars", secret: true, guide: "Midway through Turf Wars, 4 Hammerhead Front enemy bases appear on the map (red Hammerhead icons). Clear all 4 bases." },
   { id: "gang_war", name: "The Gang War", desc: "Complete all Crimes in a district", tier: "bronze", category: "DLC: Turf Wars", guide: "Complete all 5 Hammerhead Crime events in any single district. They unlock after the third Turf Wars mission and appear randomly." },
 
@@ -125,6 +126,42 @@ export default function SpiderManTracker() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [search, setSearch] = useState("");
+  const [showSteamImport, setShowSteamImport] = useState(false);
+  const [steamProfile, setSteamProfile] = useState("");
+  const [importCount, setImportCount] = useState(null);
+
+  const steamImport = useMutation({
+    mutationFn: async (profile) => {
+      const res = await fetch(`/api/steam-achievements?profile=${encodeURIComponent(profile)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch achievements");
+      return data.achievements;
+    },
+    onSuccess: (achievements) => {
+      const steamNameMap = {};
+      ACHIEVEMENTS.forEach((a) => {
+        const key = (a.steamName || a.name).toLowerCase();
+        steamNameMap[key] = a.id;
+      });
+
+      let count = 0;
+      const next = { ...completed };
+      achievements.forEach((sa) => {
+        if (!sa.achieved) return;
+        const id = steamNameMap[sa.name.toLowerCase()];
+        if (id && !next[id]) {
+          next[id] = true;
+          count++;
+        }
+      });
+
+      if (count > 0) {
+        setCompleted(next);
+        saveProgress(next);
+      }
+      setImportCount(count);
+    },
+  });
 
   useEffect(() => {
     try {
@@ -294,8 +331,60 @@ export default function SpiderManTracker() {
               Show completed
             </label>
             <button onClick={resetAll} style={{ background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}>RESET ALL</button>
+            <button onClick={() => { setShowSteamImport(!showSteamImport); setImportCount(null); }} style={{
+              background: showSteamImport ? "rgba(102,192,244,0.1)" : "transparent",
+              border: `1px solid ${showSteamImport ? "rgba(102,192,244,0.4)" : "#333"}`,
+              color: showSteamImport ? "#66C0F4" : "#555",
+              padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+              fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer",
+            }}>IMPORT STEAM</button>
           </div>
         </div>
+        {showSteamImport && (
+          <div style={{ marginBottom: 16, padding: "14px 16px", background: "#111118", border: "1px solid #1a1a26", borderRadius: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="text"
+                value={steamProfile}
+                onChange={(e) => setSteamProfile(e.target.value)}
+                placeholder="Steam profile URL, vanity name, or ID..."
+                onKeyDown={(e) => { if (e.key === "Enter" && steamProfile.trim()) steamImport.mutate(steamProfile.trim()); }}
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: 6,
+                  background: "#0a0a0f", border: "1px solid #222", color: "#ddd",
+                  fontSize: 13, fontFamily: "'Barlow', sans-serif", outline: "none",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#66C0F4"}
+                onBlur={(e) => e.target.style.borderColor = "#222"}
+              />
+              <button
+                onClick={() => steamProfile.trim() && steamImport.mutate(steamProfile.trim())}
+                disabled={steamImport.isPending || !steamProfile.trim()}
+                style={{
+                  background: steamImport.isPending ? "#222" : "rgba(102,192,244,0.15)",
+                  border: "1px solid rgba(102,192,244,0.3)",
+                  color: steamImport.isPending ? "#555" : "#66C0F4",
+                  padding: "8px 16px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+                  fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, cursor: steamImport.isPending ? "wait" : "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >{steamImport.isPending ? "IMPORTING..." : "IMPORT"}</button>
+            </div>
+            {steamImport.isError && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#E23636", background: "rgba(226,54,54,0.08)", padding: "8px 12px", borderRadius: 6 }}>
+                {steamImport.error.message}
+              </div>
+            )}
+            {steamImport.isSuccess && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#4ade80", background: "rgba(74,222,128,0.08)", padding: "8px 12px", borderRadius: 6 }}>
+                {importCount > 0 ? `Imported ${importCount} new achievement${importCount !== 1 ? "s" : ""} from Steam!` : "No new achievements to import — you're already up to date!"}
+              </div>
+            )}
+            <div style={{ marginTop: 8, fontSize: 11, color: "#555" }}>
+              e.g. steamcommunity.com/id/yourname or your 64-bit Steam ID
+            </div>
+          </div>
+        )}
       </div>
 
       {/* LIST */}
