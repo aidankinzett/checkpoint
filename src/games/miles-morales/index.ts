@@ -10,7 +10,7 @@ const config: GameConfig = {
   subtitle: 'MILES MORALES',
   icon: '\u{1F577}\u{FE0F}',
   theme,
-  steamAppId: 1338130,
+  steamAppId: 1817190,
   achievements,
   tierConfig,
   extras: [
