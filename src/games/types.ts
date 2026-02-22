@@ -39,6 +39,7 @@ export interface TrackableExtra {
 export interface GameConfig {
   id: string
   title: string
+  headerPrefix?: string
   subtitle?: string
   icon: string
   theme: GameTheme

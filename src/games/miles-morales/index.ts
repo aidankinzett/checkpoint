@@ -6,6 +6,7 @@ import { suits, SUIT_CATEGORIES } from './suits'
 const config: GameConfig = {
   id: 'miles-morales',
   title: 'SPIDER-MAN',
+  headerPrefix: "MARVEL'S",
   subtitle: 'MILES MORALES',
   icon: '\u{1F577}\u{FE0F}',
   theme,

@@ -6,6 +6,7 @@ import { suits, SUIT_CATEGORIES } from './suits'
 const config: GameConfig = {
   id: 'spiderman-remastered',
   title: 'SPIDER-MAN',
+  headerPrefix: "MARVEL'S",
   subtitle: 'REMASTERED',
   icon: '\u{1F577}\u{FE0F}',
   theme,

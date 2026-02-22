@@ -143,7 +143,7 @@ export function GameTracker({ config }: GameTrackerProps) {
       {/* HEADER */}
       <ProgressHeader
         title={config.title}
-        subtitle={config.subtitle}
+        subtitle={config.headerPrefix}
         trackingLabel={trackingLabel}
         accent={config.theme.accent}
         accentSecondary={config.theme.accentSecondary}
