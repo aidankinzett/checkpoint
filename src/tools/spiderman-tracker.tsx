@@ -5,7 +5,7 @@ import { fetchSteamAchievements } from '~/server/steam-achievements'
 import { ACHIEVEMENTS } from './spiderman-tracker/data/achievements'
 import { SUITS } from './spiderman-tracker/data/suits'
 import { STORAGE_KEY, SUITS_STORAGE_KEY, STEAM_PROFILE_KEY } from './spiderman-tracker/data/constants'
-import { useTrackedMap } from './spiderman-tracker/hooks/use-tracked-map'
+import { useTrackedMap } from '~/hooks/use-tracked-map'
 import { AchievementView } from './spiderman-tracker/components/achievement-view'
 import { SuitView } from './spiderman-tracker/components/suit-view'
 
