@@ -1,10 +1,38 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { getGame } from '~/games/registry'
 import { GameTracker } from '~/components/game-tracker/game-tracker'
 
+function migrateSpidermanData() {
+  const migrationKey = 'game-tracker:migration:spiderman-v1'
+  try {
+    if (localStorage.getItem(migrationKey)) return
+    const migrations = [
+      ['spiderman-achievements', 'game-tracker:spiderman-remastered:achievements'],
+      ['spiderman-suits', 'game-tracker:spiderman-remastered:suits'],
+      ['spiderman-steam-profile', 'game-tracker:spiderman-remastered:steam-profile'],
+    ] as const
+    for (const [oldKey, newKey] of migrations) {
+      const value = localStorage.getItem(oldKey)
+      if (value && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, value)
+        localStorage.removeItem(oldKey)
+      }
+    }
+    localStorage.setItem(migrationKey, '1')
+  } catch { /* localStorage unavailable */ }
+}
+
 function GamePage() {
   const { gameId } = Route.useParams()
   const config = getGame(gameId)
+
+  // Run migration synchronously before GameTracker mounts
+  useState(() => {
+    if (gameId === 'spiderman-remastered') {
+      migrateSpidermanData()
+    }
+  })
 
   if (!config) {
     return (
