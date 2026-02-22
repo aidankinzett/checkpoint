@@ -1,7 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 
 const STEAM_API_BASE = 'https://api.steampowered.com'
-const APP_ID = '1817070' // Marvel's Spider-Man Remastered
 
 interface SteamAchievement {
   name: string
@@ -64,8 +63,9 @@ async function resolveVanityUrl(
 async function getPlayerAchievements(
   apiKey: string,
   steamId: string,
+  appId: string,
 ): Promise<SteamAchievement[]> {
-  const url = `${STEAM_API_BASE}/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${APP_ID}&l=english`
+  const url = `${STEAM_API_BASE}/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${appId}&l=english`
   const res = await fetch(url)
   if (!res.ok) {
     throw new Error(`Steam API error: ${res.status}`)
@@ -88,13 +88,19 @@ async function getPlayerAchievements(
 }
 
 export const fetchSteamAchievements = createServerFn({ method: 'GET' })
-  .inputValidator((data: { profile: string }) => data)
+  .inputValidator((data: { profile: string; appId: string }) => data)
   .handler(async ({ data }): Promise<SteamAchievement[]> => {
-    const { profile } = data
+    const { profile, appId } = data
 
     if (!profile) {
       throw new Error(
         "Missing 'profile' parameter. Provide a Steam profile URL, vanity name, or 64-bit Steam ID.",
+      )
+    }
+
+    if (!appId) {
+      throw new Error(
+        "Missing 'appId' parameter. Provide a Steam App ID (e.g. '1817070' for Spider-Man Remastered).",
       )
     }
 
@@ -117,5 +123,5 @@ export const fetchSteamAchievements = createServerFn({ method: 'GET' })
       steamId = await resolveVanityUrl(apiKey, parsed.vanityName!)
     }
 
-    return getPlayerAchievements(apiKey, steamId)
+    return getPlayerAchievements(apiKey, steamId, appId)
   })

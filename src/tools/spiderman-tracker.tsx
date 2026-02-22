@@ -37,7 +37,7 @@ export default function SpiderManTracker() {
 
   const steamImport = useMutation({
     mutationFn: async (profile: string) => {
-      return fetchSteamAchievements({ data: { profile } })
+      return fetchSteamAchievements({ data: { profile, appId: '1817070' } })
     },
     onSuccess: (steamAchievements) => {
       const steamNameMap: Record<string, string> = {}
