@@ -1,10 +1,12 @@
 import type { GameConfig } from './types'
 import spidermanRemastered from './spiderman-remastered'
 import milesMoreales from './miles-morales'
+import spiderman2 from './spiderman-2'
 
 const games: GameConfig[] = [
   spidermanRemastered,
   milesMoreales,
+  spiderman2,
 ]
 
 export function getGame(id: string): GameConfig | undefined {
