@@ -12,7 +12,7 @@ import { TrackableView } from './trackable-view'
 
 interface GameTrackerProps {
   config: GameConfig
-  steamId?: string
+  steamId?: string | null
   preloadedAchievements?: Record<string, boolean>
 }
 
@@ -40,8 +40,8 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
 
   // Auto-import Steam achievements for curated trackers when the user is signed in
   const autoImport = useMutation({
-    mutationFn: async (profile: string) => {
-      return fetchSteamAchievements({ data: { profile, appId: String(config.steamAppId) } })
+    mutationFn: async () => {
+      return fetchSteamAchievements({ data: { appId: String(config.steamAppId) } })
     },
     onSuccess: (steamAchievements) => {
       const steamNameMap: Record<string, string> = {}
@@ -66,7 +66,7 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
     try {
       if (localStorage.getItem(`game-tracker:${config.id}:steam-auto-synced`)) return
     } catch { /* noop */ }
-    autoImport.mutate(steamId)
+    autoImport.mutate()
   }, [steamId, achievements.loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Favicon: set on mount, restore default on unmount

@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { authMiddleware } from './middleware'
 
 const STEAM_API_BASE = 'https://api.steampowered.com'
 
@@ -30,10 +31,14 @@ export interface GlobalAchievementPercent {
 }
 
 export const fetchUserOwnedGames = createServerFn({ method: 'GET' })
-  .inputValidator((data: { steamId: string }) => data)
-  .handler(async ({ data }): Promise<OwnedGame[]> => {
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<OwnedGame[]> => {
+    const steamId = context.session.user.steamId
+    if (!steamId) {
+      throw new Error('Unauthorized: No Steam ID associated with this account.')
+    }
     const apiKey = getApiKey()
-    const url = `${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${data.steamId}&include_appinfo=1&include_played_free_games=1`
+    const url = `${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
     const res = await fetch(url)
     if (!res.ok) throw new Error(`Steam API error: ${res.status}`)
     const json = await res.json()
@@ -41,6 +46,7 @@ export const fetchUserOwnedGames = createServerFn({ method: 'GET' })
   })
 
 export const fetchGameSchema = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
   .inputValidator((data: { appId: string }) => data)
   .handler(async ({ data }): Promise<SteamAchievementSchema[]> => {
     const apiKey = getApiKey()
@@ -52,6 +58,7 @@ export const fetchGameSchema = createServerFn({ method: 'GET' })
   })
 
 export const fetchGlobalAchievementRatings = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
   .inputValidator((data: { appId: string }) => data)
   .handler(async ({ data }): Promise<GlobalAchievementPercent[]> => {
     const apiKey = getApiKey()
@@ -63,6 +70,7 @@ export const fetchGlobalAchievementRatings = createServerFn({ method: 'GET' })
   })
 
 export const fetchGameLogo = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
   .inputValidator((data: { appId: string }) => data)
   .handler(async ({ data }): Promise<string | null> => {
     const apiKey = process.env.STEAMGRIDDB_API_KEY

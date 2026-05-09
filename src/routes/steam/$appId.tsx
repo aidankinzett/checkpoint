@@ -23,7 +23,7 @@ function assignTier(percent: number): 'gold' | 'silver' | 'bronze' {
 function SteamGamePage() {
   const { appId } = Route.useParams()
   const { data: session } = useSession()
-  const steamId = (session?.user as { steamId?: string } | undefined)?.steamId
+  const steamId = session?.user.steamId
 
   const [gameTitle] = useState<string>(() => {
     try { return localStorage.getItem(`steam-game-name:${appId}`) || `App ${appId}` } catch { return `App ${appId}` }
@@ -49,7 +49,7 @@ function SteamGamePage() {
 
   const userAchievementsQuery = useQuery({
     queryKey: ['steam-user-achievements', appId, steamId],
-    queryFn: () => fetchSteamAchievements({ data: { profile: steamId!, appId } }),
+    queryFn: () => fetchSteamAchievements({ data: { appId } }),
     enabled: !!steamId,
     staleTime: 1000 * 60 * 5,
   })

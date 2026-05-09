@@ -24,7 +24,7 @@ function formatPlaytime(minutes: number): string {
   return `${Math.floor(minutes / 60)}h`
 }
 
-function SteamLoginPill({ displayName, avatarUrl }: { displayName?: string; avatarUrl?: string }) {
+function SteamLoginPill({ displayName, avatarUrl }: { displayName?: string | null; avatarUrl?: string | null }) {
   if (displayName) {
     return (
       <div style={{
@@ -81,13 +81,13 @@ function Home() {
   const [hoverId, setHoverId] = useState<string | null>(null)
 
   const { data: session, isPending: sessionLoading } = useSession()
-  const steamId = (session?.user as { steamId?: string } | undefined)?.steamId
-  const displayName = (session?.user as { displayName?: string } | undefined)?.displayName
-  const avatarUrl = (session?.user as { avatarUrl?: string } | undefined)?.avatarUrl
+  const steamId = session?.user.steamId
+  const displayName = session?.user.displayName
+  const avatarUrl = session?.user.avatarUrl
 
   const libraryQuery = useQuery({
     queryKey: ['steam-library', steamId],
-    queryFn: () => fetchUserOwnedGames({ data: { steamId: steamId! } }),
+    queryFn: () => fetchUserOwnedGames(),
     enabled: !!steamId,
     staleTime: 1000 * 60 * 5,
   })

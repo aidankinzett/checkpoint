@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { authMiddleware } from './middleware'
 
 const STEAM_API_BASE = 'https://api.steampowered.com'
 
@@ -88,14 +89,14 @@ async function getPlayerAchievements(
 }
 
 export const fetchSteamAchievements = createServerFn({ method: 'GET' })
-  .inputValidator((data: { profile: string; appId: string }) => data)
-  .handler(async ({ data }): Promise<SteamAchievement[]> => {
-    const { profile, appId } = data
+  .middleware([authMiddleware])
+  .inputValidator((data: { appId: string }) => data)
+  .handler(async ({ data, context }): Promise<SteamAchievement[]> => {
+    const { appId } = data
+    const steamId = context.session.user.steamId
 
-    if (!profile) {
-      throw new Error(
-        "Missing 'profile' parameter. Provide a Steam profile URL, vanity name, or 64-bit Steam ID.",
-      )
+    if (!steamId) {
+      throw new Error('Unauthorized: No Steam ID associated with this account.')
     }
 
     if (!appId) {
@@ -107,20 +108,6 @@ export const fetchSteamAchievements = createServerFn({ method: 'GET' })
     const apiKey = process.env.STEAM_API_KEY
     if (!apiKey) {
       throw new Error('STEAM_API_KEY is not configured on the server.')
-    }
-
-    const parsed = parseSteamProfile(profile)
-    if (!parsed) {
-      throw new Error(
-        'Invalid profile input. Provide a Steam profile URL (e.g. steamcommunity.com/id/username), vanity name, or 64-bit Steam ID.',
-      )
-    }
-
-    let steamId: string
-    if (parsed.steamId) {
-      steamId = parsed.steamId
-    } else {
-      steamId = await resolveVanityUrl(apiKey, parsed.vanityName!)
     }
 
     return getPlayerAchievements(apiKey, steamId, appId)
