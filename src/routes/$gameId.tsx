@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { getGame } from '~/games/registry'
 import { GameTracker } from '~/components/game-tracker/game-tracker'
 import { useSession } from '~/hooks/use-session'
+import { fetchGameLogo } from '~/server/steam-games'
 
 function migrateSpidermanData() {
   const migrationKey = 'game-tracker:migration:spiderman-v1'
@@ -36,6 +38,13 @@ function GamePage() {
     }
   })
 
+  const logoQuery = useQuery({
+    queryKey: ['steamgriddb-logo', String(config?.steamAppId)],
+    queryFn: () => fetchGameLogo({ data: { appId: String(config!.steamAppId) } }),
+    enabled: !!config?.steamAppId,
+    staleTime: 1000 * 60 * 60 * 24,
+  })
+
   if (!config) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#E8E8E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow', sans-serif" }}>
@@ -45,7 +54,11 @@ function GamePage() {
     )
   }
 
-  return <GameTracker config={config} steamId={steamId} />
+  const configWithLogo = logoQuery.data
+    ? { ...config, logoUrl: logoQuery.data }
+    : config
+
+  return <GameTracker config={configWithLogo} steamId={steamId} />
 }
 
 export const Route = createFileRoute('/$gameId')({

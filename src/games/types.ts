@@ -42,6 +42,7 @@ export interface GameConfig {
   headerPrefix?: string
   subtitle?: string
   icon: string
+  logoUrl?: string
   theme: GameTheme
   steamAppId?: number
   achievements: Achievement[]

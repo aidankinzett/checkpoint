@@ -15,56 +15,84 @@ Bun is the package manager (bun.lock). Use `bun install` for dependencies.
 
 ## Architecture
 
-A TanStack Start (React 19 + TypeScript) SSR app serving a collection of standalone tools. Uses Vite, file-based routing via TanStack Router, and deploys on Vercel via Nitro.
+Checkpoint is a game achievement tracker built with TanStack Start (React 19 + TypeScript) with SSR via Vite + Nitro. Deploys on Vercel.
 
-**Routing:** TanStack Router with file-based routes in `src/routes/`. The route tree is auto-generated into `src/routeTree.gen.ts` (gitignored).
+**Routing:** TanStack Router with file-based routes in `src/routes/`. The route tree is auto-generated into `src/routeTree.gen.ts` (gitignored). All game routes use `ssr: false` because tracking state reads from localStorage.
 
-**Tool discovery:** The homepage (`src/routes/index.tsx`) uses `import.meta.glob('../tools/*.tsx', { eager: true })` to discover tool meta at build time. Each tool also needs a thin route file in `src/routes/`.
+**Two types of game pages:**
+- `/$gameId` — curated games with hand-authored achievement data and guides
+- `/steam/$appId` — dynamic tracker for any Steam game, pulling data live from the Steam API
 
-**Server functions:** `createServerFn()` from `@tanstack/react-start` replaces Vercel serverless functions. Server code lives in `src/server/`.
+**Game registry:** All curated games are registered in `src/games/registry.ts`. Each game lives in `src/games/{game-id}/` and exports a `GameConfig` object as its default from `index.ts`.
 
-**Path aliases:** `~/*` maps to `./src/*` (configured in tsconfig.json + vite-tsconfig-paths).
+**Shared tracker UI:** `src/components/game-tracker/` — the `GameTracker` component is reused for both curated and dynamic Steam pages. It handles tab navigation (achievements + optional extras like suits), progress display, and Steam auto-import.
+
+**Progress persistence:** `useTrackedMap` (`src/hooks/use-tracked-map.ts`) stores completion state in localStorage under keys like `game-tracker:{gameId}:achievements` and `game-tracker:{gameId}:{extraType}`.
+
+**Auth:** `better-auth` with a custom Steam OpenID plugin (`src/server/steam-plugin.ts`). Auth routes handled at `/api/auth/$` via a catch-all server handler. Session stored in SQLite (`local.db` in dev, `DATABASE_PATH` env var in prod). Signing in with Steam stores `steamId`, `displayName`, and `avatarUrl` on the user.
+
+**Server functions:** `createServerFn()` from `@tanstack/react-start`. Steam API calls live in `src/server/steam-games.ts` and `src/server/steam-achievements.ts`.
+
+**Path aliases:** `~/*` maps to `./src/*`.
 
 **Key files:**
-- `src/router.tsx` — Router config with QueryClient in context
-- `src/routes/__root.tsx` — HTML shell, Tailwind CSS, QueryClientProvider
-- `src/routes/index.tsx` — Homepage grid with tool discovery
-- `src/lib/favicon.ts` — Dynamic emoji favicon utilities
+- `src/games/types.ts` — `GameConfig`, `Achievement`, `TrackableExtra`, `GameTheme` types
+- `src/games/registry.ts` — `getGame(id)` and `getAllGames()` lookups
+- `src/routes/index.tsx` — Homepage with search across curated games + authenticated user's Steam library
+- `src/routes/$gameId.tsx` — Curated game page with legacy localStorage migration logic
+- `src/routes/steam/$appId.tsx` — Dynamic Steam game page; tiers assigned from global achievement percentages
+- `src/server/auth.ts` — `better-auth` instance + `Session` type export
+- `src/hooks/use-session.ts` — `authClient` and `useSession()` re-exports
 
-## Adding a New Tool
+## Adding a Curated Game
 
-Two files are needed per tool:
+Three files needed:
 
-### 1. Tool component (`src/tools/my-tool.tsx`)
-
-```tsx
-export const meta = {
-  title: "My Tool",
-  description: "What it does",
-  icon: "🔧",  // emoji or data URI
-};
-
-export default function MyTool() {
-  return <div>...</div>;
+### 1. `src/games/{game-id}/theme.ts`
+```ts
+import type { GameTheme, TierConfig } from '../types'
+export const theme: GameTheme = { accent: '#E23636', fonts: ['Bebas Neue', 'Barlow'] }
+export const tierConfig: Record<string, TierConfig> = {
+  gold:   { label: 'Gold',   color: '#F5C518', icon: '🏆' },
+  silver: { label: 'Silver', color: '#A8B4C0', icon: '🥈' },
+  bronze: { label: 'Bronze', color: '#CD7F32', icon: '🥉' },
 }
 ```
 
-### 2. Route file (`src/routes/my-tool.tsx`)
+### 2. `src/games/{game-id}/achievements.ts`
+Array of `Achievement` objects. Each achievement requires `id`, `name`, `desc`, `tier`, `category`, `guide`. Set `steamName` when the Steam API name differs from `name` (used for auto-sync matching).
 
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import MyTool from '~/tools/my-tool'
+### 3. `src/games/{game-id}/index.ts`
+```ts
+import type { GameConfig } from '../types'
+import { theme, tierConfig } from './theme'
+import { achievements } from './achievements'
 
-export const Route = createFileRoute('/my-tool')({
-  component: MyTool,
-  head: () => ({
-    meta: [{ title: 'My Tool — Tools' }],
-  }),
-})
+const config: GameConfig = {
+  id: 'my-game',
+  title: 'MY GAME',
+  icon: '🎮',
+  theme,
+  steamAppId: 12345,   // optional; enables Steam auto-sync
+  achievements,
+  tierConfig,
+  extras: [],          // optional: suits, collectibles, etc.
+  completionMessage: '🏆 Platinum unlocked!',
+}
+export default config
 ```
 
-The tool auto-appears on the homepage grid. Use `ssr: false` on the route if the tool uses browser-only APIs like localStorage.
+Then register it in `src/games/registry.ts`.
+
+## Environment Variables
+
+```
+BETTER_AUTH_SECRET=    # random secret for session signing
+BETTER_AUTH_URL=       # full origin, e.g. https://checkpoint.example.com
+STEAM_API_KEY=         # Steam Web API key
+DATABASE_PATH=         # path to SQLite file (default: ./local.db)
+```
 
 ## Styling
 
-Tailwind CSS v4 via Vite plugin. CSS entry point is `src/styles/app.css`. Dark theme throughout (zinc-950 background). The existing tool (spiderman-tracker) uses a mix of Tailwind classes and inline styles.
+Tailwind CSS v4 via Vite plugin. CSS entry point is `src/styles/app.css`. Dark theme throughout (`#0a0a0f` background, `#E8E8E8` text). Components use inline styles with occasional Tailwind classes. Game-specific accent colors come from `GameTheme.accent`.

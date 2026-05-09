@@ -160,6 +160,7 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
       <ProgressHeader
         title={config.title}
         subtitle={config.headerPrefix}
+        logoUrl={config.logoUrl}
         trackingLabel={trackingLabel}
         accent={config.theme.accent}
         accentSecondary={config.theme.accentSecondary}

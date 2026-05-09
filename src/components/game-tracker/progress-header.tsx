@@ -1,6 +1,7 @@
 interface ProgressHeaderProps {
   title: string;
   subtitle?: string;
+  logoUrl?: string;
   trackingLabel: string;
   accent: string;
   accentSecondary?: string;
@@ -29,6 +30,7 @@ function lightenHex(hex: string, amount: number): string {
 export function ProgressHeader({
   title,
   subtitle,
+  logoUrl,
   trackingLabel,
   accent,
   accentSecondary,
@@ -96,19 +98,34 @@ export function ProgressHeader({
               {subtitle}
             </div>
           )}
-          <h1
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: "clamp(48px, 10vw, 72px)",
-              color: accent,
-              margin: 0,
-              letterSpacing: 6,
-              lineHeight: 1,
-              textShadow: `0 0 40px ${hexToRgba(accent, 0.3)}, 0 2px 0 ${secondary}`,
-            }}
-          >
-            {title}
-          </h1>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={title}
+              style={{
+                display: "block",
+                margin: "0 auto 4px",
+                maxHeight: 100,
+                maxWidth: "100%",
+                objectFit: "contain",
+                filter: `drop-shadow(0 0 24px ${hexToRgba(accent, 0.4)})`,
+              }}
+            />
+          ) : (
+            <h1
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: "clamp(48px, 10vw, 72px)",
+                color: accent,
+                margin: 0,
+                letterSpacing: 6,
+                lineHeight: 1,
+                textShadow: `0 0 40px ${hexToRgba(accent, 0.3)}, 0 2px 0 ${secondary}`,
+              }}
+            >
+              {title}
+            </h1>
+          )}
           <div
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
