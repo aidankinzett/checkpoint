@@ -17,13 +17,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { title: 'Tools' },
+        { title: 'Checkpoint' },
       ],
       links: [
         { rel: 'stylesheet', href: appCss },
         {
           rel: 'icon',
-          href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>",
+          href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>",
         },
       ],
     }),
@@ -49,7 +49,7 @@ function NotFound() {
       <h1 className="text-4xl font-bold mb-4">404</h1>
       <p className="text-zinc-400 mb-6">Page not found.</p>
       <Link to="/" className="text-blue-400 hover:text-blue-300 underline">
-        Back to Tools
+        Back to Home
       </Link>
     </div>
   )
