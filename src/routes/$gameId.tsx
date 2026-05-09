@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { getGame } from '~/games/registry'
 import { GameTracker } from '~/components/game-tracker/game-tracker'
+import { useSession } from '~/hooks/use-session'
 
 function migrateSpidermanData() {
   const migrationKey = 'game-tracker:migration:spiderman-v1'
@@ -26,6 +27,8 @@ function migrateSpidermanData() {
 function GamePage() {
   const { gameId } = Route.useParams()
   const config = getGame(gameId)
+  const { data: session } = useSession()
+  const steamId = (session?.user as { steamId?: string } | undefined)?.steamId
 
   useState(() => {
     if (gameId === 'spiderman-remastered') {
@@ -42,7 +45,7 @@ function GamePage() {
     )
   }
 
-  return <GameTracker config={config} />
+  return <GameTracker config={config} steamId={steamId} />
 }
 
 export const Route = createFileRoute('/$gameId')({

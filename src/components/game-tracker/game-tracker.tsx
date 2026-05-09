@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
 import { emojiToFavicon, setFavicon } from '~/lib/favicon'
 import { fetchSteamAchievements } from '~/server/steam-achievements'
 import { useTrackedMap } from '~/hooks/use-tracked-map'
@@ -10,9 +12,11 @@ import { TrackableView } from './trackable-view'
 
 interface GameTrackerProps {
   config: GameConfig
+  steamId?: string
+  preloadedAchievements?: Record<string, boolean>
 }
 
-export function GameTracker({ config }: GameTrackerProps) {
+export function GameTracker({ config, steamId, preloadedAchievements }: GameTrackerProps) {
   const firstExtra = config.extras?.[0]
 
   // Tab state: 'achievements' or the extra's type string (e.g. 'suits')
@@ -27,14 +31,15 @@ export function GameTracker({ config }: GameTrackerProps) {
     firstExtra ? `game-tracker:${config.id}:${firstExtra.type}` : `game-tracker:${config.id}:_unused`
   )
 
-  // Steam profile state
-  const [steamProfile, setSteamProfile] = useState(() => {
-    try { return localStorage.getItem(`game-tracker:${config.id}:steam-profile`) || "" } catch { return "" }
-  })
-  const [importCount, setImportCount] = useState<number | null>(null)
+  // Preload achievements from Steam API (used by dynamic /steam/$appId pages)
+  useEffect(() => {
+    if (!preloadedAchievements || !achievements.loaded) return
+    if (Object.keys(achievements.data).length > 0) return
+    achievements.setAll(preloadedAchievements)
+  }, [achievements.loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Steam import mutation
-  const steamImport = useMutation({
+  // Auto-import Steam achievements for curated trackers when the user is signed in
+  const autoImport = useMutation({
     mutationFn: async (profile: string) => {
       return fetchSteamAchievements({ data: { profile, appId: String(config.steamAppId) } })
     },
@@ -44,25 +49,25 @@ export function GameTracker({ config }: GameTrackerProps) {
         const key = (a.steamName || a.name).toLowerCase()
         steamNameMap[key] = a.id
       })
-
-      let count = 0
       const next = { ...achievements.data }
+      let count = 0
       steamAchievements.forEach((sa: { name: string; achieved: boolean }) => {
         if (!sa.achieved) return
         const id = steamNameMap[sa.name.toLowerCase()]
-        if (id && !next[id]) {
-          next[id] = true
-          count++
-        }
+        if (id && !next[id]) { next[id] = true; count++ }
       })
-
-      if (count > 0) {
-        achievements.setAll(next)
-      }
-      setImportCount(count)
-      try { localStorage.setItem(`game-tracker:${config.id}:steam-profile`, steamProfile) } catch { /* localStorage unavailable */ }
+      if (count > 0) achievements.setAll(next)
+      try { localStorage.setItem(`game-tracker:${config.id}:steam-auto-synced`, '1') } catch { /* noop */ }
     },
   })
+
+  useEffect(() => {
+    if (!steamId || !config.steamAppId || !achievements.loaded) return
+    try {
+      if (localStorage.getItem(`game-tracker:${config.id}:steam-auto-synced`)) return
+    } catch { /* noop */ }
+    autoImport.mutate(steamId)
+  }, [steamId, achievements.loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Favicon: set on mount, restore default on unmount
   useEffect(() => {
@@ -140,6 +145,17 @@ export function GameTracker({ config }: GameTrackerProps) {
         .check-circle:hover { transform: scale(1.15); filter: brightness(1.2); }
       `}</style>
 
+      {/* BACK BUTTON */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "8px 20px 0" }}>
+        <Link
+          to="/"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontFamily: "'Barlow', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: 1, textDecoration: 'none', padding: '8px 0' }}
+        >
+          <ArrowLeft size={14} strokeWidth={2} />
+          ALL GAMES
+        </Link>
+      </div>
+
       {/* HEADER */}
       <ProgressHeader
         title={config.title}
@@ -180,11 +196,6 @@ export function GameTracker({ config }: GameTrackerProps) {
           completed={achievements.data}
           onToggle={achievements.toggle}
           onReset={achievements.reset}
-          steamAppId={config.steamAppId}
-          steamProfile={steamProfile}
-          setSteamProfile={setSteamProfile}
-          steamImport={steamImport}
-          importCount={importCount}
         />
       ) : firstExtra ? (
         <TrackableView

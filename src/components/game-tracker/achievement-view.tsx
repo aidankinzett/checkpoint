@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import type { UseMutationResult } from '@tanstack/react-query'
+import { Check, ChevronDown, Search, RotateCcw, Lock, BookOpen } from 'lucide-react'
 import type { Achievement, TierConfig } from '~/games/types'
-import { SteamImportPanel } from './steam-import-panel'
 
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace('#', '')
@@ -19,21 +18,15 @@ interface AchievementViewProps {
   completed: Record<string, boolean>
   onToggle: (id: string) => void
   onReset: () => void
-  steamAppId?: number
-  steamProfile: string
-  setSteamProfile: (v: string) => void
-  steamImport: UseMutationResult<unknown[], Error, string>
-  importCount: number | null
 }
 
-export function AchievementView({ achievements, categories, tierConfig, accent, completed, onToggle, onReset, steamAppId, steamProfile, setSteamProfile, steamImport, importCount }: AchievementViewProps) {
+export function AchievementView({ achievements, categories, tierConfig, accent, completed, onToggle, onReset }: AchievementViewProps) {
   const [activeCategory, setActiveCategory] = useState("all")
   const [filterTier, setFilterTier] = useState("all")
   const [search, setSearch] = useState("")
   const [showCompleted, setShowCompleted] = useState(true)
   const [showStory, setShowStory] = useState(true)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [showSteamImport, setShowSteamImport] = useState(false)
 
   const completedCount = Object.keys(completed).length
   const totalCount = achievements.length
@@ -78,17 +71,20 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
             )
           })}
         </div>
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 10, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex', pointerEvents: 'none', color: '#555' }}>
+            <Search size={14} strokeWidth={2} />
+          </span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search achievements..."
             style={{
-              width: "100%", padding: "10px 14px", borderRadius: 6,
+              width: "100%", padding: "10px 14px 10px 34px", borderRadius: 6,
               background: "#111118", border: "1px solid #222", color: "#ddd",
               fontSize: 14, fontFamily: "'Barlow', sans-serif",
-              outline: "none",
+              outline: "none", boxSizing: 'border-box',
             }}
             onFocus={(e) => { e.target.style.borderColor = accent }}
             onBlur={(e) => { e.target.style.borderColor = "#222" }}
@@ -118,39 +114,29 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
               <input type="checkbox" checked={showCompleted} onChange={() => setShowCompleted(!showCompleted)} style={{ accentColor: accent }} />
               Show completed
             </label>
-            <button onClick={onReset} style={{ background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}>RESET ALL</button>
-            {steamAppId && (
-              <button onClick={() => { setShowSteamImport(!showSteamImport) }} style={{
-                background: showSteamImport ? "rgba(102,192,244,0.1)" : "transparent",
-                border: `1px solid ${showSteamImport ? "rgba(102,192,244,0.4)" : "#333"}`,
-                color: showSteamImport ? "#66C0F4" : "#555",
-                padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer",
-              }}>IMPORT STEAM</button>
-            )}
+            <button
+              onClick={onReset}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}
+            >
+              <RotateCcw size={10} strokeWidth={2.25} />
+              RESET ALL
+            </button>
           </div>
         </div>
-        {showSteamImport && (
-          <SteamImportPanel
-            steamProfile={steamProfile}
-            setSteamProfile={setSteamProfile}
-            steamImport={steamImport}
-            importCount={importCount}
-          />
-        )}
       </div>
 
       {/* LIST */}
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 40px" }}>
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: 40, color: "#555", fontSize: 14 }}>
-            {!showCompleted && completedCount > 0 ? "\u{1F578}\u{FE0F} All visible achievements completed! Toggle 'Show completed' to see them." : "No achievements match this filter."}
+            {!showCompleted && completedCount > 0 ? "🕸️ All visible achievements completed! Toggle 'Show completed' to see them." : "No achievements match this filter."}
           </div>
         )}
         {filtered.map((a) => {
           const done = !!completed[a.id]
           const tier = tierConfig[a.tier]
           const isOpen = !!expanded[a.id]
+          const isStory = !!a.guide?.includes("cannot be missed")
           return (
             <div key={a.id} style={{ marginBottom: 4 }}>
               <div
@@ -175,17 +161,21 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0, cursor: "pointer",
                   }}>
-                  {done && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8.5L6.5 12L13 4" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
+                  {done && <Check size={16} strokeWidth={3} color="#fff" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#ddd", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ opacity: done ? 0.5 : 1, textDecoration: done ? "line-through" : "none" }}>{a.name}</span>
-                    {a.secret && <span style={{ fontSize: 9, fontWeight: 700, color: "#666", background: "#1a1a26", padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>SECRET</span>}
-                    {a.guide?.includes("cannot be missed") && <span style={{ fontSize: 9, fontWeight: 700, color: accent, background: hexToRgba(accent, 0.1), padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>STORY</span>}
+                    {a.secret && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: "#666", background: "#1a1a26", padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>
+                        <Lock size={9} strokeWidth={2.5} />SECRET
+                      </span>
+                    )}
+                    {isStory && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: accent, background: hexToRgba(accent, 0.1), padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>
+                        <BookOpen size={9} strokeWidth={2.5} />STORY
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12, color: "#888", marginTop: 2, opacity: done ? 0.35 : 0.65 }}>{a.desc}</div>
                 </div>
@@ -194,9 +184,9 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
                     <span style={{ width: 8, height: 8, borderRadius: "50%", display: "inline-block", background: tier.color }} />
                     <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: tier.color }}>{tier.label}</span>
                   </div>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.4 }}>
-                    <path d="M3 5L7 9L11 5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span style={{ display: 'inline-flex', transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.4, color: '#888' }}>
+                    <ChevronDown size={14} strokeWidth={1.75} />
+                  </span>
                 </div>
               </div>
               {isOpen && (

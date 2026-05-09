@@ -10,10 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-router": "^1.161.1",
     "@tanstack/react-start": "^1.161.1",
+    "better-auth": "^1.6.9",
+    "better-sqlite3": "^12.9.0",
+    "lucide-react": "^1.14.0",
     "nitro": "^3.0.1-20260218-103033-254ff340",
+    "node-steam-openid": "^2.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -22,7 +27,9 @@
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/eslint-plugin-query": "^5.91.4",
     "@tanstack/eslint-plugin-router": "^1.161.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.2.3",
+    "@types/node-steam-openid": "^1.0.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

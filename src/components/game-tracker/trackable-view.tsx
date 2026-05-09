@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, ChevronDown, Search, RotateCcw } from 'lucide-react'
 import type { TrackableItem } from '~/games/types'
 
 interface TrackableViewProps {
@@ -66,17 +67,20 @@ export function TrackableView({ items, categories, accent, completed, onToggle, 
             )
           })}
         </div>
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 10, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex', pointerEvents: 'none', color: '#555' }}>
+            <Search size={14} strokeWidth={2} />
+          </span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${itemLabel}...`}
             style={{
-              width: "100%", padding: "10px 14px", borderRadius: 6,
+              width: "100%", padding: "10px 14px 10px 34px", borderRadius: 6,
               background: "#111118", border: "1px solid #222", color: "#ddd",
               fontSize: 14, fontFamily: "'Barlow', sans-serif",
-              outline: "none",
+              outline: "none", boxSizing: 'border-box',
             }}
             onFocus={(e) => { e.target.style.borderColor = accent }}
             onBlur={(e) => { e.target.style.borderColor = "#222" }}
@@ -88,7 +92,9 @@ export function TrackableView({ items, categories, accent, completed, onToggle, 
               <input type="checkbox" checked={showCompleted} onChange={() => setShowCompleted(!showCompleted)} style={{ accentColor: accent }} />
               Show {completedLabel}
             </label>
-            <button onClick={onReset} style={{ background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}>RESET ALL</button>
+            <button onClick={onReset} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}>
+              <RotateCcw size={10} strokeWidth={2.25} />RESET ALL
+            </button>
           </div>
         </div>
       </div>
@@ -127,11 +133,7 @@ export function TrackableView({ items, categories, accent, completed, onToggle, 
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0, cursor: "pointer",
                   }}>
-                  {done && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8.5L6.5 12L13 4" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
+                  {done && <Check size={16} strokeWidth={3} color="#fff" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#ddd", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -143,9 +145,9 @@ export function TrackableView({ items, categories, accent, completed, onToggle, 
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.4 }}>
-                    <path d="M3 5L7 9L11 5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span style={{ display: 'inline-flex', transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.4, color: '#888' }}>
+                    <ChevronDown size={14} strokeWidth={1.75} />
+                  </span>
                 </div>
               </div>
               {isOpen && (
