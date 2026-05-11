@@ -59,21 +59,20 @@ function SteamGamePage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', gap: 16 }}>
-        <div style={{ width: 40, height: 40, border: '3px solid #222', borderTop: '3px solid #4a9eff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <p style={{ color: '#4a9eff', fontFamily: 'sans-serif', fontSize: 18 }}>Loading achievements…</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-[#0a0a0f] gap-4">
+        <div className="w-10 h-10 border-[3px] border-[#222] border-t-[#4a9eff] rounded-full animate-spin" />
+        <p className="text-[#4a9eff] font-sans text-[18px]">Loading achievements…</p>
       </div>
     )
   }
 
   if (error || !schemaQuery.data?.length) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#E8E8E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        <p style={{ fontSize: 48 }}>😕</p>
-        <h1 style={{ fontSize: 24, color: '#4a9eff' }}>No Achievements Found</h1>
-        <p style={{ color: '#888' }}>This game either has no achievements or its data is not public.</p>
-        <Link to="/" style={{ color: '#4a9eff', marginTop: 8 }}>← Back to search</Link>
+      <div className="min-h-screen bg-[#0a0a0f] text-[#E8E8E8] flex flex-col items-center justify-center gap-3">
+        <p className="text-[48px]">😕</p>
+        <h1 className="text-[24px] text-[#4a9eff]">No Achievements Found</h1>
+        <p className="text-[#888]">This game either has no achievements or its data is not public.</p>
+        <Link to="/" className="text-[#4a9eff] mt-2 hover:underline">← Back to search</Link>
       </div>
     )
   }

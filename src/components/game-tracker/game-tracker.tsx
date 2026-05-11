@@ -98,9 +98,9 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
   const loaded = achievements.loaded && extraTracker.loaded
   if (!loaded) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: "#0a0a0f", gap: 16 }}>
-        <div style={{ width: 40, height: 40, border: "3px solid #222", borderTop: `3px solid ${config.theme.accent}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <p style={{ color: config.theme.accent, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 2 }}>LOADING...</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-[#0a0a0f] gap-4">
+        <div className="w-10 h-10 rounded-full animate-spin border-[3px] border-solid border-[#222]" style={{ borderTopColor: config.theme.accent }} />
+        <p className="font-['Bebas_Neue',sans-serif] text-[24px] tracking-[2px]" style={{ color: config.theme.accent }}>LOADING...</p>
       </div>
     )
   }
@@ -132,10 +132,8 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#E8E8E8", fontFamily: "'Barlow', sans-serif" }}>
+    <div className="min-h-screen bg-[#0a0a0f] text-[#E8E8E8] font-['Barlow',sans-serif]">
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         .ach-row { transition: background 0.15s, border-color 0.15s; }
         .ach-row:hover { background: #14141f !important; border-color: #2a2a3a !important; }
         .ach-row-done:hover { background: ${hexToRgba(config.theme.accent, 0.07)} !important; }
@@ -146,10 +144,10 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
       `}</style>
 
       {/* BACK BUTTON */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "8px 20px 0" }}>
+      <div className="max-w-[900px] mx-auto pt-2 px-5">
         <Link
           to="/"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontFamily: "'Barlow', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: 1, textDecoration: 'none', padding: '8px 0' }}
+          className="inline-flex items-center gap-1.5 text-[#666] font-['Barlow',sans-serif] text-[12px] font-semibold tracking-[1px] no-underline py-2 hover:underline"
         >
           <ArrowLeft size={14} strokeWidth={2} />
           ALL GAMES
@@ -171,17 +169,15 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
       />
 
       {/* TAB BAR */}
-      <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", borderBottom: "1px solid #1a1a24" }}>
+      <div className="max-w-[900px] mx-auto flex border-b border-[#1a1a24]">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
+            className="flex-1 py-3.5 bg-transparent border-none border-b-[3px] border-solid border-transparent font-['Bebas_Neue',sans-serif] text-[16px] tracking-[3px] cursor-pointer transition-colors duration-150"
             style={{
-              flex: 1, padding: "14px 0", background: "transparent", border: "none",
-              borderBottom: activeTab === tab.key ? `3px solid ${config.theme.accent}` : "3px solid transparent",
+              borderBottomColor: activeTab === tab.key ? config.theme.accent : "transparent",
               color: activeTab === tab.key ? config.theme.accent : "#666",
-              fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 3,
-              cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
             }}
           >{tab.label}</button>
         ))}
@@ -212,10 +208,10 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
       ) : null}
 
       {/* FOOTER */}
-      <footer style={{ borderTop: "1px solid #1a1a24", padding: "16px 20px", marginTop: 20 }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#555", flexWrap: "wrap", gap: 8 }}>
+      <footer className="border-t border-[#1a1a24] py-4 px-5 mt-5">
+        <div className="max-w-[900px] mx-auto flex justify-between items-center text-[12px] text-[#555] flex-wrap gap-2">
           <span>{config.icon} Progress saves automatically · Tap any row for details</span>
-          <span style={{ opacity: 0.4 }}>{footerParts.join(' · ')}</span>
+          <span className="opacity-40">{footerParts.join(' · ')}</span>
         </div>
       </footer>
     </div>

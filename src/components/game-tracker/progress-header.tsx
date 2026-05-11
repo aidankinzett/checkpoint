@@ -45,56 +45,31 @@ export function ProgressHeader({
 
   return (
     <header
+      className="relative overflow-hidden bg-[linear-gradient(180deg,#1a0a0a_0%,#0a0a0f_100%)] border-b-[2px] border-solid"
       style={{
-        background: "linear-gradient(180deg, #1a0a0a 0%, #0a0a0f 100%)",
-        borderBottom: `2px solid ${accent}`,
-        position: "relative",
-        overflow: "hidden",
+        borderBottomColor: accent,
       }}
     >
-      <div
-        style={{
-          maxWidth: 900,
-          margin: "0 auto",
-          padding: "36px 20px 28px",
-          position: "relative",
-        }}
-      >
+      <div className="max-w-[900px] mx-auto pt-9 px-5 pb-7 relative">
         {/* Corner glow - left */}
         <div
+          className="absolute top-0 left-0 w-[120px] h-[120px]"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 120,
-            height: 120,
             background: `radial-gradient(circle at 0% 0%, ${hexToRgba(accent, 0.08)} 0%, transparent 70%)`,
           }}
         />
         {/* Corner glow - right */}
         <div
+          className="absolute top-0 right-0 w-[120px] h-[120px]"
           style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: 120,
-            height: 120,
             background: `radial-gradient(circle at 100% 0%, ${hexToRgba(accent, 0.08)} 0%, transparent 70%)`,
           }}
         />
 
         {/* Title block */}
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div className="text-center mb-6">
           {subtitle && (
-            <div
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 15,
-                letterSpacing: 8,
-                color: "#888",
-                marginBottom: -2,
-              }}
-            >
+            <div className="font-['Bebas_Neue',sans-serif] text-[15px] tracking-[8px] text-[#888] -mb-0.5">
               {subtitle}
             </div>
           )}
@@ -102,106 +77,49 @@ export function ProgressHeader({
             <img
               src={logoUrl}
               alt={title}
+              className="block mx-auto mb-1 max-h-[100px] max-w-full object-contain"
               style={{
-                display: "block",
-                margin: "0 auto 4px",
-                maxHeight: 100,
-                maxWidth: "100%",
-                objectFit: "contain",
                 filter: `drop-shadow(0 0 24px ${hexToRgba(accent, 0.4)})`,
               }}
             />
           ) : (
             <h1
+              className="font-['Bebas_Neue',sans-serif] text-[clamp(48px,10vw,72px)] m-0 tracking-[6px] leading-none"
               style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: "clamp(48px, 10vw, 72px)",
                 color: accent,
-                margin: 0,
-                letterSpacing: 6,
-                lineHeight: 1,
                 textShadow: `0 0 40px ${hexToRgba(accent, 0.3)}, 0 2px 0 ${secondary}`,
               }}
             >
               {title}
             </h1>
           )}
-          <div
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 14,
-              letterSpacing: 5,
-              color: "#666",
-              marginTop: 4,
-            }}
-          >
+          <div className="font-['Bebas_Neue',sans-serif] text-[14px] tracking-[5px] text-[#666] mt-1">
             {trackingLabel}
           </div>
         </div>
 
         {/* Progress section */}
-        <div style={{ maxWidth: 500, margin: "0 auto" }}>
+        <div className="max-w-[500px] mx-auto">
           {/* Counts */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "center",
-              gap: 4,
-              marginBottom: 10,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 42,
-                color: accent,
-                lineHeight: 1,
-              }}
-            >
+          <div className="flex items-baseline justify-center gap-1 mb-2.5">
+            <span className="font-['Bebas_Neue',sans-serif] text-[42px] leading-none" style={{ color: accent }}>
               {completedCount}
             </span>
-            <span
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 28,
-                color: "#444",
-              }}
-            >
+            <span className="font-['Bebas_Neue',sans-serif] text-[28px] text-[#444]">
               /
             </span>
-            <span
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 28,
-                color: "#666",
-                lineHeight: 1,
-              }}
-            >
+            <span className="font-['Bebas_Neue',sans-serif] text-[28px] text-[#666] leading-none">
               {totalCount}
             </span>
-            <span
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 18,
-                color: accent,
-                marginLeft: 12,
-                opacity: 0.8,
-              }}
-            >
+            <span className="font-['Bebas_Neue',sans-serif] text-[18px] ml-3 opacity-80" style={{ color: accent }}>
               {pct}%
             </span>
             {saving && (
               <span
+                className="text-[10px] py-0.5 px-2 rounded ml-3 font-semibold tracking-[1px]"
                 style={{
-                  fontSize: 10,
                   color: accent,
                   background: hexToRgba(accent, 0.1),
-                  padding: "2px 8px",
-                  borderRadius: 4,
-                  marginLeft: 12,
-                  fontWeight: 600,
-                  letterSpacing: 1,
                 }}
               >
                 SAVING...
@@ -210,55 +128,21 @@ export function ProgressHeader({
           </div>
 
           {/* Progress bar */}
-          <div
-            style={{
-              width: "100%",
-              height: 8,
-              background: "#1a1a24",
-              borderRadius: 4,
-              overflow: "hidden",
-              border: "1px solid #222",
-            }}
-          >
+          <div className="w-full h-2 bg-[#1a1a24] rounded overflow-hidden border border-[#222]">
             <div
+              className="h-full rounded transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative overflow-hidden"
               style={{
-                height: "100%",
                 background: `linear-gradient(90deg, ${secondary}, ${accent}, ${lighter})`,
-                borderRadius: 4,
-                transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)",
-                position: "relative",
-                overflow: "hidden",
                 width: `${pct}%`,
               }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "50%",
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)",
-                }}
-              />
+              <div className="absolute top-0 left-0 right-0 h-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0.2)_0%,transparent_100%)]" />
             </div>
           </div>
 
           {/* Completion message */}
           {pct === 100 && completionMessage && (
-            <div
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 18,
-                letterSpacing: 3,
-                color: "#F5C518",
-                textAlign: "center",
-                marginTop: 14,
-                textShadow: "0 0 20px rgba(245,197,24,0.4)",
-                animation: "pulse 2s ease-in-out infinite",
-              }}
-            >
+            <div className="font-['Bebas_Neue',sans-serif] text-[18px] tracking-[3px] text-[#F5C518] text-center mt-3.5 animate-pulse [text-shadow:0_0_20px_rgba(245,197,24,0.4)]">
               {completionMessage}
             </div>
           )}

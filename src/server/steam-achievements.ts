@@ -8,58 +8,6 @@ interface SteamAchievement {
   achieved: boolean
 }
 
-interface ParsedProfile {
-  steamId?: string
-  vanityName?: string
-}
-
-function parseSteamProfile(input: string): ParsedProfile | null {
-  const trimmed = input.trim().replace(/\/+$/, '')
-
-  // Raw 64-bit Steam ID (17 digits)
-  if (/^\d{17}$/.test(trimmed)) {
-    return { steamId: trimmed }
-  }
-
-  // Full profile URL: steamcommunity.com/profiles/<id>
-  const profileMatch = trimmed.match(
-    /steamcommunity\.com\/profiles\/(\d{17})/,
-  )
-  if (profileMatch) {
-    return { steamId: profileMatch[1] }
-  }
-
-  // Vanity URL: steamcommunity.com/id/<name>
-  const vanityUrlMatch = trimmed.match(/steamcommunity\.com\/id\/([^/]+)/)
-  if (vanityUrlMatch) {
-    return { vanityName: vanityUrlMatch[1] }
-  }
-
-  // Bare vanity name (no slashes, not all digits)
-  if (/^[a-zA-Z0-9_-]+$/.test(trimmed) && !/^\d+$/.test(trimmed)) {
-    return { vanityName: trimmed }
-  }
-
-  return null
-}
-
-async function resolveVanityUrl(
-  apiKey: string,
-  vanityName: string,
-): Promise<string> {
-  const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${apiKey}&vanityurl=${encodeURIComponent(vanityName)}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Steam API error: ${res.status}`)
-  }
-  const data = await res.json()
-  if (data.response.success !== 1) {
-    throw new Error(
-      `Could not resolve Steam vanity URL "${vanityName}". Check the profile name.`,
-    )
-  }
-  return data.response.steamid
-}
 
 async function getPlayerAchievements(
   apiKey: string,

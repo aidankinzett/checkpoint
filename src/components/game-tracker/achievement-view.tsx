@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Check, ChevronDown, Search, RotateCcw, Lock, BookOpen } from 'lucide-react'
 import type { Achievement, TierConfig } from '~/games/types'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Checkbox } from '~/components/ui/checkbox'
 
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace('#', '')
@@ -54,81 +57,102 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
   return (
     <>
       {/* CONTROLS */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px 20px 0" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+      <div className="max-w-[900px] mx-auto pt-4 px-5">
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
           {["all", ...categories].map((cat) => {
             const isAll = cat === "all"
             const active = activeCategory === cat
             const label = isAll ? `ALL (${completedCount}/${totalCount})` : `${cat.toUpperCase()} (${catCounts[cat].done}/${catCounts[cat].total})`
             return (
-              <button key={cat} className="cat-btn" onClick={() => setActiveCategory(cat)} style={{
-                background: active ? hexToRgba(accent, 0.12) : "#111118",
-                border: `1px solid ${active ? accent : "#222"}`,
-                color: active ? accent : "#777",
-                padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, cursor: "pointer",
-              }}>{label}</button>
+              <Button
+                key={cat}
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveCategory(cat)}
+                className="h-auto py-1.5 px-3 text-[11px] font-semibold font-['Barlow',sans-serif] tracking-[0.5px] rounded-md transition-colors hover:bg-transparent"
+                style={{
+                  backgroundColor: active ? hexToRgba(accent, 0.12) : "#111118",
+                  borderColor: active ? accent : "#222",
+                  color: active ? accent : "#777",
+                }}
+              >
+                {label}
+              </Button>
             )
           })}
         </div>
-        <div style={{ marginBottom: 10, position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex', pointerEvents: 'none', color: '#555' }}>
+        <div className="mb-2.5 relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex pointer-events-none text-[#555]">
             <Search size={14} strokeWidth={2} />
           </span>
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search achievements..."
-            style={{
-              width: "100%", padding: "10px 14px 10px 34px", borderRadius: 6,
-              background: "#111118", border: "1px solid #222", color: "#ddd",
-              fontSize: 14, fontFamily: "'Barlow', sans-serif",
-              outline: "none", boxSizing: 'border-box',
-            }}
+            className="w-full py-2.5 pr-3.5 pl-[34px] rounded-md bg-[#111118] border-[#222] text-[#ddd] text-[14px] font-['Barlow',sans-serif] h-auto transition-colors focus-visible:ring-0"
             onFocus={(e) => { e.target.style.borderColor = accent }}
             onBlur={(e) => { e.target.style.borderColor = "#222" }}
           />
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1a1a24" }}>
-          <div style={{ display: "flex", gap: 6 }}>
+        <div className="flex flex-wrap justify-between items-center gap-2.5 mb-4 pb-4 border-b border-[#1a1a24]">
+          <div className="flex gap-1.5">
             {(["all", "gold", "silver", "bronze"] as const).map((t) => {
               const active = filterTier === t
               return (
-                <button key={t} onClick={() => setFilterTier(t)} style={{
-                  background: active ? hexToRgba(accent, 0.08) : "transparent",
-                  border: `1px solid ${active ? hexToRgba(accent, 0.4) : "#222"}`,
-                  color: active ? "#ccc" : "#555",
-                  padding: "5px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600,
-                  fontFamily: "'Barlow', sans-serif", cursor: "pointer",
-                }}>{t === "all" ? "ALL TIERS" : `${tierConfig[t].icon} ${tierConfig[t].label.toUpperCase()}`}</button>
+                <Button
+                  key={t}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilterTier(t)}
+                  className="h-auto py-[5px] px-2.5 text-[11px] font-semibold font-['Barlow',sans-serif] rounded-[5px] transition-colors hover:bg-transparent"
+                  style={{
+                    backgroundColor: active ? hexToRgba(accent, 0.08) : "transparent",
+                    borderColor: active ? hexToRgba(accent, 0.4) : "#222",
+                    color: active ? "#ccc" : "#555",
+                  }}
+                >
+                  {t === "all" ? "ALL TIERS" : `${tierConfig[t].icon} ${tierConfig[t].label.toUpperCase()}`}
+                </Button>
               )
             })}
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <label style={{ fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-              <input type="checkbox" checked={showStory} onChange={() => setShowStory(!showStory)} style={{ accentColor: accent }} />
+          <div className="flex gap-3 items-center">
+            <label className="text-[12px] text-[#666] flex items-center gap-1.5 cursor-pointer">
+              <Checkbox
+                checked={showStory}
+                onCheckedChange={(checked) => setShowStory(!!checked)}
+                style={{ '--checkbox-accent': accent } as React.CSSProperties}
+                className="border-[#666] data-[state=checked]:bg-[var(--checkbox-accent)] data-[state=checked]:border-[var(--checkbox-accent)]"
+              />
               Show story
             </label>
-            <label style={{ fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-              <input type="checkbox" checked={showCompleted} onChange={() => setShowCompleted(!showCompleted)} style={{ accentColor: accent }} />
+            <label className="text-[12px] text-[#666] flex items-center gap-1.5 cursor-pointer">
+              <Checkbox
+                checked={showCompleted}
+                onCheckedChange={(checked) => setShowCompleted(!!checked)}
+                style={{ '--checkbox-accent': accent } as React.CSSProperties}
+                className="border-[#666] data-[state=checked]:bg-[var(--checkbox-accent)] data-[state=checked]:border-[var(--checkbox-accent)]"
+              />
               Show completed
             </label>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onReset}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: "transparent", border: "1px solid #333", color: "#555", padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 1, cursor: "pointer" }}
+              className="inline-flex items-center gap-1.25 bg-transparent border-[#333] text-[#555] py-1 px-2.5 h-auto rounded text-[10px] font-bold font-['Barlow',sans-serif] tracking-[1px] hover:bg-transparent hover:text-[#777]"
             >
               <RotateCcw size={10} strokeWidth={2.25} />
               RESET ALL
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* LIST */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 40px" }}>
+      <div className="max-w-[900px] mx-auto px-5 pb-10">
         {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: 40, color: "#555", fontSize: 14 }}>
+          <div className="text-center py-10 px-5 text-[#555] text-[14px]">
             {!showCompleted && completedCount > 0 ? "🕸️ All visible achievements completed! Toggle 'Show completed' to see them." : "No achievements match this filter."}
           </div>
         )}
@@ -138,69 +162,59 @@ export function AchievementView({ achievements, categories, tierConfig, accent, 
           const isOpen = !!expanded[a.id]
           const isStory = !!a.guide?.includes("cannot be missed")
           return (
-            <div key={a.id} style={{ marginBottom: 4 }}>
+            <div key={a.id} className="mb-1">
               <div
-                className={`ach-row ${done ? "ach-row-done" : ""}`}
+                className={`flex items-center gap-3.5 w-full py-3.5 px-4 cursor-pointer text-left font-['Barlow',sans-serif] transition-colors duration-150 border-solid border-[1px] ${isOpen ? "rounded-t-lg border-b-0" : "rounded-lg"} ${done ? "ach-row-done" : ""}`}
                 onClick={() => toggleExpanded(a.id)}
                 style={{
-                  display: "flex", alignItems: "center", gap: 14, width: "100%",
-                  padding: "14px 16px",
-                  background: done ? hexToRgba(accent, 0.04) : "#0f0f18",
-                  border: `1px solid ${done ? hexToRgba(accent, 0.15) : "#1a1a26"}`,
-                  borderRadius: isOpen ? "8px 8px 0 0" : 8,
-                  borderBottom: isOpen ? "none" : undefined,
-                  cursor: "pointer", textAlign: "left", fontFamily: "'Barlow', sans-serif",
+                  backgroundColor: done ? hexToRgba(accent, 0.04) : "#0f0f18",
+                  borderColor: done ? hexToRgba(accent, 0.15) : "#1a1a26",
                 }}>
                 <div
-                  className="check-circle"
                   onClick={(e) => { e.stopPropagation(); onToggle(a.id) }}
+                  className="w-7 h-7 min-w-[28px] rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-colors border-[2px] border-solid"
                   style={{
-                    width: 28, height: 28, minWidth: 28, borderRadius: "50%",
-                    border: `2px solid ${done ? accent : tier.color}`,
-                    background: done ? accent : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0, cursor: "pointer",
+                    borderColor: done ? accent : tier.color,
+                    backgroundColor: done ? accent : "transparent",
                   }}>
                   {done && <Check size={16} strokeWidth={3} color="#fff" />}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#ddd", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ opacity: done ? 0.5 : 1, textDecoration: done ? "line-through" : "none" }}>{a.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-semibold text-[#ddd] flex items-center gap-2 flex-wrap">
+                    <span className={done ? "opacity-50 line-through" : "opacity-100"}>{a.name}</span>
                     {a.secret && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: "#666", background: "#1a1a26", padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>
+                      <span className="inline-flex items-center gap-[3px] text-[9px] font-bold text-[#666] bg-[#1a1a26] py-[1px] px-1.5 rounded-[3px] tracking-[1px]">
                         <Lock size={9} strokeWidth={2.5} />SECRET
                       </span>
                     )}
                     {isStory && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: accent, background: hexToRgba(accent, 0.1), padding: "1px 6px", borderRadius: 3, letterSpacing: 1 }}>
+                      <span className="inline-flex items-center gap-[3px] text-[9px] font-bold py-[1px] px-1.5 rounded-[3px] tracking-[1px]" style={{ color: accent, backgroundColor: hexToRgba(accent, 0.1) }}>
                         <BookOpen size={9} strokeWidth={2.5} />STORY
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, color: "#888", marginTop: 2, opacity: done ? 0.35 : 0.65 }}>{a.desc}</div>
+                  <div className={`text-[12px] text-[#888] mt-0.5 ${done ? "opacity-35" : "opacity-65"}`}>{a.desc}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", display: "inline-block", background: tier.color }} />
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: tier.color }}>{tier.label}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.25">
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: tier.color }} />
+                    <span className="text-[10px] font-bold tracking-[1px] uppercase" style={{ color: tier.color }}>{tier.label}</span>
                   </div>
-                  <span style={{ display: 'inline-flex', transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.4, color: '#888' }}>
+                  <span className={`inline-flex transition-transform duration-200 opacity-40 text-[#888] ${isOpen ? "rotate-180" : "rotate-0"}`}>
                     <ChevronDown size={14} strokeWidth={1.75} />
                   </span>
                 </div>
               </div>
               {isOpen && (
-                <div style={{
-                  padding: "14px 16px 14px 58px",
-                  background: done ? hexToRgba(accent, 0.02) : "#0c0c14",
-                  borderLeft: `1px solid ${done ? hexToRgba(accent, 0.15) : "#1a1a26"}`,
-                  borderRight: `1px solid ${done ? hexToRgba(accent, 0.15) : "#1a1a26"}`,
-                  borderBottom: `1px solid ${done ? hexToRgba(accent, 0.15) : "#1a1a26"}`,
-                  borderRadius: "0 0 8px 8px",
-                }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: accent, whiteSpace: "nowrap", marginTop: 1 }}>HOW TO</span>
-                    <p style={{ fontSize: 13, color: "#999", lineHeight: 1.65, margin: 0 }}>{a.guide}</p>
+                <div
+                  className="py-3.5 pr-4 pl-[58px] rounded-b-lg border-[1px] border-t-0 border-solid"
+                  style={{
+                    backgroundColor: done ? hexToRgba(accent, 0.02) : "#0c0c14",
+                    borderColor: done ? hexToRgba(accent, 0.15) : "#1a1a26",
+                  }}>
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-[11px] font-bold tracking-[1px] whitespace-nowrap mt-[1px]" style={{ color: accent }}>HOW TO</span>
+                    <p className="text-[13px] text-[#999] leading-[1.65] m-0">{a.guide}</p>
                   </div>
                 </div>
               )}

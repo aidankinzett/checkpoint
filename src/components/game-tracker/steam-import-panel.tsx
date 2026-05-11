@@ -1,5 +1,6 @@
 import type { UseMutationResult } from '@tanstack/react-query'
-
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
 interface SteamImportPanelProps {
   steamProfile: string
   setSteamProfile: (v: string) => void
@@ -9,47 +10,38 @@ interface SteamImportPanelProps {
 
 export function SteamImportPanel({ steamProfile, setSteamProfile, steamImport, importCount }: SteamImportPanelProps) {
   return (
-    <div style={{ marginBottom: 16, padding: "14px 16px", background: "#111118", border: "1px solid #1a1a26", borderRadius: 8 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <input
+    <div className="mb-4 py-3.5 px-4 bg-[#111118] border border-[#1a1a26] rounded-lg">
+      <div className="flex gap-2 items-center">
+        <Input
           type="text"
           value={steamProfile}
           onChange={(e) => setSteamProfile(e.target.value)}
           placeholder="Steam profile URL, vanity name, or ID..."
           aria-label="Steam profile URL, vanity name, or ID"
           onKeyDown={(e) => { if (e.key === "Enter" && steamProfile.trim() && !steamImport.isPending) steamImport.mutate(steamProfile.trim()) }}
-          style={{
-            flex: 1, padding: "8px 12px", borderRadius: 6,
-            background: "#0a0a0f", border: "1px solid #222", color: "#ddd",
-            fontSize: 13, fontFamily: "'Barlow', sans-serif", outline: "none",
-          }}
+          className="flex-1 py-2 px-3 rounded-md bg-[#0a0a0f] border-[#222] text-[#ddd] text-[13px] font-['Barlow',sans-serif] outline-none h-auto transition-colors focus-visible:ring-0 focus-visible:border-[#66C0F4]"
           onFocus={(e) => { e.target.style.borderColor = "#66C0F4" }}
           onBlur={(e) => { e.target.style.borderColor = "#222" }}
         />
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => steamProfile.trim() && steamImport.mutate(steamProfile.trim())}
           disabled={steamImport.isPending || !steamProfile.trim()}
-          style={{
-            background: steamImport.isPending ? "#222" : "rgba(102,192,244,0.15)",
-            border: "1px solid rgba(102,192,244,0.3)",
-            color: steamImport.isPending ? "#555" : "#66C0F4",
-            padding: "8px 16px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-            fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, cursor: steamImport.isPending ? "wait" : "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >{steamImport.isPending ? "IMPORTING..." : "IMPORT"}</button>
+          className="bg-[#66C0F4]/15 border-[#66C0F4]/30 text-[#66C0F4] py-2 px-4 rounded-md text-[12px] font-bold font-['Barlow',sans-serif] tracking-[0.5px] whitespace-nowrap h-auto disabled:bg-[#222] disabled:border-transparent disabled:text-[#555] disabled:opacity-100 cursor-pointer disabled:cursor-wait hover:bg-[#66C0F4]/25 hover:text-[#66C0F4]"
+        >{steamImport.isPending ? "IMPORTING..." : "IMPORT"}</Button>
       </div>
       {steamImport.isError && (
-        <div style={{ marginTop: 10, fontSize: 12, color: "#E23636", background: "rgba(226,54,54,0.08)", padding: "8px 12px", borderRadius: 6 }}>
+        <div className="mt-2.5 text-[12px] text-[#E23636] bg-[#E23636]/[0.08] py-2 px-3 rounded-md">
           {steamImport.error.message}
         </div>
       )}
       {steamImport.isSuccess && (
-        <div style={{ marginTop: 10, fontSize: 12, color: "#4ade80", background: "rgba(74,222,128,0.08)", padding: "8px 12px", borderRadius: 6 }}>
+        <div className="mt-2.5 text-[12px] text-[#4ade80] bg-[#4ade80]/[0.08] py-2 px-3 rounded-md">
           {importCount !== null && importCount > 0 ? `Imported ${importCount} new achievement${importCount !== 1 ? "s" : ""} from Steam!` : "No new achievements to import \u2014 you're already up to date!"}
         </div>
       )}
-      <div style={{ marginTop: 8, fontSize: 11, color: "#555" }}>
+      <div className="mt-2 text-[11px] text-[#555]">
         e.g. steamcommunity.com/id/yourname or your 64-bit Steam ID
       </div>
     </div>

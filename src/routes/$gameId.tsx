@@ -47,9 +47,9 @@ function GamePage() {
 
   if (!config) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#E8E8E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow', sans-serif" }}>
-        <h1 style={{ fontSize: 48, fontFamily: "'Bebas Neue', sans-serif", color: '#E23636', marginBottom: 8 }}>Game Not Found</h1>
-        <p style={{ color: '#888' }}>No tracker exists for this game.</p>
+      <div className="min-h-screen bg-[#0a0a0f] text-[#E8E8E8] flex flex-col items-center justify-center font-['Barlow',sans-serif]">
+        <h1 className="text-[48px] font-['Bebas_Neue',sans-serif] text-[#E23636] mb-2">Game Not Found</h1>
+        <p className="text-[#888]">No tracker exists for this game.</p>
       </div>
     )
   }
