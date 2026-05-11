@@ -1,4 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { useLiveQuery, eq } from '@tanstack/react-db'
+import { trackedItemsCollection } from '~/lib/db'
 
 interface UseTrackedMapReturn {
   data: Record<string, boolean>
@@ -9,48 +11,87 @@ interface UseTrackedMapReturn {
   setAll: (data: Record<string, boolean>) => void
 }
 
-function readStorage(key: string): Record<string, boolean> {
-  try {
-    const stored = localStorage.getItem(key)
-    if (stored) return JSON.parse(stored)
-  } catch { /* localStorage unavailable */ }
-  return {}
-}
-
 export function useTrackedMap(storageKey: string): UseTrackedMapReturn {
-  const [data, setData] = useState<Record<string, boolean>>(() => readStorage(storageKey))
-  const [saving, setSaving] = useState(false)
-  // Route has ssr: false so localStorage is always available at init
-  const loaded = true
+  const { data: items } = useLiveQuery((q) =>
+    q.from({ item: trackedItemsCollection })
+      .where(({ item }) => eq(item.storageKey, storageKey))
+      .findAll()
+  )
 
-  const save = useCallback((next: Record<string, boolean>) => {
-    setSaving(true)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next))
-    } catch { /* localStorage unavailable */ }
-    setTimeout(() => setSaving(false), 400)
-  }, [storageKey])
+  const data = useMemo(() => {
+    const record: Record<string, boolean> = {}
+    if (items) {
+      for (const item of items) {
+        if (item.unlocked) {
+          record[item.itemId] = true
+        }
+      }
+    }
+    return record
+  }, [items])
+
+  const [saving, setSaving] = useState(false)
+  const loaded = items !== undefined
 
   const toggle = useCallback((id: string) => {
-    setData((prev) => {
-      const next = { ...prev, [id]: !prev[id] }
-      if (!next[id]) delete next[id]
-      save(next)
-      return next
-    })
-  }, [save])
+    setSaving(true)
+    const fullId = `${storageKey}:${id}`
+    const isUnlocked = data[id] === true
+
+    if (isUnlocked) {
+      trackedItemsCollection.delete(fullId).catch(() => {
+        trackedItemsCollection.update(fullId, (draft) => {
+          draft.unlocked = false
+        }).catch(() => {})
+      })
+    } else {
+      trackedItemsCollection.insert({
+        id: fullId,
+        storageKey,
+        itemId: id,
+        unlocked: true,
+      }).catch(() => {
+        trackedItemsCollection.update(fullId, (draft) => {
+          draft.unlocked = true
+        }).catch(() => {})
+      })
+    }
+    setTimeout(() => setSaving(false), 400)
+  }, [storageKey, data])
 
   const reset = useCallback(() => {
     if (confirm("Reset all progress? This cannot be undone.")) {
-      setData({})
-      save({})
+      setSaving(true)
+      if (items) {
+        for (const item of items) {
+          trackedItemsCollection.delete(item.id).catch(() => {})
+        }
+      }
+      setTimeout(() => setSaving(false), 400)
     }
-  }, [save])
+  }, [items])
 
   const setAll = useCallback((newData: Record<string, boolean>) => {
-    setData(newData)
-    save(newData)
-  }, [save])
+    setSaving(true)
+    for (const [id, unlocked] of Object.entries(newData)) {
+      const fullId = `${storageKey}:${id}`
+      if (unlocked) {
+        trackedItemsCollection.insert({
+          id: fullId,
+          storageKey,
+          itemId: id,
+          unlocked: true,
+        }).catch(() => {
+          trackedItemsCollection.update(fullId, (draft) => {
+            draft.unlocked = true
+          }).catch(() => {})
+        })
+      } else {
+        trackedItemsCollection.delete(fullId).catch(() => {})
+      }
+    }
+    setTimeout(() => setSaving(false), 400)
+  }, [storageKey])
 
   return { data, loaded, saving, toggle, reset, setAll }
 }
