@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
 import { authMiddleware } from './middleware'
 
 const STEAM_API_BASE = 'https://api.steampowered.com'
@@ -38,8 +39,12 @@ export const fetchUserOwnedGames = createServerFn({ method: 'GET' })
       throw new Error('Unauthorized: No Steam ID associated with this account.')
     }
     const apiKey = getApiKey()
-    const url = `${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
-    const res = await fetch(url)
+    const url = new URL(`${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/`)
+    url.searchParams.set('key', apiKey)
+    url.searchParams.set('steamid', steamId)
+    url.searchParams.set('include_appinfo', '1')
+    url.searchParams.set('include_played_free_games', '1')
+    const res = await fetch(url.toString())
     if (!res.ok) throw new Error(`Steam API error: ${res.status}`)
     const json = await res.json()
     return json.response?.games ?? []
@@ -47,11 +52,14 @@ export const fetchUserOwnedGames = createServerFn({ method: 'GET' })
 
 export const fetchGameSchema = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator((data: { appId: string }) => data)
+  .inputValidator(z.object({ appId: z.string().regex(/^\d+$/) }))
   .handler(async ({ data }): Promise<SteamAchievementSchema[]> => {
     const apiKey = getApiKey()
-    const url = `${STEAM_API_BASE}/ISteamUserStats/GetSchemaForGame/v2/?key=${apiKey}&appid=${data.appId}&l=english`
-    const res = await fetch(url)
+    const url = new URL(`${STEAM_API_BASE}/ISteamUserStats/GetSchemaForGame/v2/`)
+    url.searchParams.set('key', apiKey)
+    url.searchParams.set('appid', data.appId)
+    url.searchParams.set('l', 'english')
+    const res = await fetch(url.toString())
     if (!res.ok) throw new Error(`Steam API error: ${res.status}`)
     const json = await res.json()
     return json.game?.availableGameStats?.achievements ?? []
@@ -59,11 +67,15 @@ export const fetchGameSchema = createServerFn({ method: 'GET' })
 
 export const fetchGlobalAchievementRatings = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator((data: { appId: string }) => data)
+  .inputValidator(z.object({ appId: z.string().regex(/^\d+$/) }))
   .handler(async ({ data }): Promise<GlobalAchievementPercent[]> => {
     const apiKey = getApiKey()
-    const url = `${STEAM_API_BASE}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=${data.appId}&key=${apiKey}`
-    const res = await fetch(url)
+    const url = new URL(
+      `${STEAM_API_BASE}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/`,
+    )
+    url.searchParams.set('gameid', data.appId)
+    url.searchParams.set('key', apiKey)
+    const res = await fetch(url.toString())
     if (!res.ok) return []
     const json = await res.json()
     return json.achievementpercentages?.achievements ?? []
@@ -71,12 +83,20 @@ export const fetchGlobalAchievementRatings = createServerFn({ method: 'GET' })
 
 export const fetchGameLogo = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator((data: { appId: string }) => data)
+  .inputValidator(z.object({ appId: z.string().regex(/^\d+$/) }))
   .handler(async ({ data }): Promise<string | null> => {
     const apiKey = process.env.STEAMGRIDDB_API_KEY
     if (!apiKey) return null
-    const url = `https://www.steamgriddb.com/api/v2/logos/steam/${data.appId}?styles=official,white&mimes=image%2Fpng&types=static&limit=1`
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } })
+    const url = new URL(
+      `https://www.steamgriddb.com/api/v2/logos/steam/${encodeURIComponent(data.appId)}`,
+    )
+    url.searchParams.set('styles', 'official,white')
+    url.searchParams.set('mimes', 'image/png')
+    url.searchParams.set('types', 'static')
+    url.searchParams.set('limit', '1')
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
     if (!res.ok) return null
     const json = await res.json()
     return json.data?.[0]?.url ?? null
