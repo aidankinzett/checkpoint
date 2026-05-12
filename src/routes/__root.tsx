@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from 'react'
 import appCss from '../styles/app.css?url'
 import { Toaster } from '~/components/ui/sonner'
+import { ThemeProvider } from 'next-themes'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
@@ -36,11 +37,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext()
   return (
-    <QueryClientProvider client={queryClient}>
-      <RootDocument>
-        <Outlet />
-      </RootDocument>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark">
+      <QueryClientProvider client={queryClient}>
+        <RootDocument>
+          <Outlet />
+        </RootDocument>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }
 

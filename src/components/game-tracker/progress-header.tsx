@@ -78,9 +78,10 @@ export function ProgressHeader({
         {showSyncButton && (
           <button
             onClick={onSyncClick}
-            disabled={isSyncing}
+            disabled={isSyncing || !onSyncClick}
             className="absolute top-5 right-5 p-2 rounded-full bg-[#1a1a24] border border-[#2a2a3a] text-[#888] hover:text-[#E8E8E8] hover:border-[#444] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10"
             title="Sync with Steam"
+            aria-label="Sync with Steam"
           >
             <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />
           </button>

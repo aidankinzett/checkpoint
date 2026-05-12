@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { emojiToFavicon, setFavicon } from '~/lib/favicon'
 import { fetchSteamAchievements } from '~/server/steam-achievements'
 import { useTrackedMap } from '~/hooks/use-tracked-map'
+import { useSession } from '~/hooks/use-session'
 import type { GameConfig } from '~/games/types'
 import { ProgressHeader } from './progress-header'
 import { AchievementView } from './achievement-view'
@@ -17,7 +18,9 @@ interface GameTrackerProps {
   preloadedAchievements?: Record<string, boolean>
 }
 
-export function GameTracker({ config, steamId, preloadedAchievements }: GameTrackerProps) {
+export function GameTracker({ config, steamId: propSteamId, preloadedAchievements }: GameTrackerProps) {
+  const { data: session } = useSession()
+  const steamId = (session?.user as { steamId?: string } | undefined)?.steamId || propSteamId
   const firstExtra = config.extras?.[0]
 
   // Tab state: 'achievements' or the extra's type string (e.g. 'suits')
