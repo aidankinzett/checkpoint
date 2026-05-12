@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
 import { authMiddleware } from './middleware'
 
 const STEAM_API_BASE = 'https://api.steampowered.com'
@@ -14,8 +15,14 @@ async function getPlayerAchievements(
   steamId: string,
   appId: string,
 ): Promise<SteamAchievement[]> {
-  const url = `${STEAM_API_BASE}/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${appId}&l=english`
-  const res = await fetch(url)
+  const url = new URL(
+    `${STEAM_API_BASE}/ISteamUserStats/GetPlayerAchievements/v1/`,
+  )
+  url.searchParams.set('key', apiKey)
+  url.searchParams.set('steamid', steamId)
+  url.searchParams.set('appid', appId)
+  url.searchParams.set('l', 'english')
+  const res = await fetch(url.toString())
   if (!res.ok) {
     throw new Error(`Steam API error: ${res.status}`)
   }
@@ -38,7 +45,7 @@ async function getPlayerAchievements(
 
 export const fetchSteamAchievements = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator((data: { appId: string }) => data)
+  .inputValidator(z.object({ appId: z.string().regex(/^\d+$/) }))
   .handler(async ({ data, context }): Promise<SteamAchievement[]> => {
     const { appId } = data
     const steamId = context.session.user.steamId

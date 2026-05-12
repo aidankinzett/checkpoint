@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
 import { emojiToFavicon, setFavicon } from '~/lib/favicon'
 import { fetchSteamAchievements } from '~/server/steam-achievements'
 import { useTrackedMap } from '~/hooks/use-tracked-map'
+import { useSession } from '~/hooks/use-session'
 import type { GameConfig } from '~/games/types'
 import { hexToRgba } from '~/lib/utils'
 import { ProgressHeader } from './progress-header'
@@ -17,7 +19,9 @@ interface GameTrackerProps {
   preloadedAchievements?: Record<string, boolean>
 }
 
-export function GameTracker({ config, steamId, preloadedAchievements }: GameTrackerProps) {
+export function GameTracker({ config, steamId: propSteamId, preloadedAchievements }: GameTrackerProps) {
+  const { data: session } = useSession()
+  const steamId = (session?.user as { steamId?: string } | undefined)?.steamId || propSteamId
   const firstExtra = config.extras?.[0]
 
   // Tab state: 'achievements' or the extra's type string (e.g. 'suits')
@@ -39,36 +43,70 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
     achievements.setAll(preloadedAchievements)
   }, [achievements.loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-import Steam achievements for curated trackers when the user is signed in
-  const autoImport = useMutation({
+  // Import Steam achievements for curated trackers when the user is signed in
+  const syncSteam = useMutation({
     mutationFn: async () => {
       return fetchSteamAchievements({ data: { appId: String(config.steamAppId) } })
     },
-    onSuccess: (steamAchievements) => {
-      const steamNameMap: Record<string, string> = {}
-      config.achievements.forEach((a) => {
-        const key = (a.steamName || a.name).toLowerCase()
-        steamNameMap[key] = a.id
-      })
-      const next = { ...achievements.data }
-      let count = 0
-      steamAchievements.forEach((sa: { name: string; achieved: boolean }) => {
-        if (!sa.achieved) return
-        const id = steamNameMap[sa.name.toLowerCase()]
-        if (id && !next[id]) { next[id] = true; count++ }
-      })
-      if (count > 0) achievements.setAll(next)
-      try { localStorage.setItem(`game-tracker:${config.id}:steam-auto-synced`, '1') } catch { /* noop */ }
-    },
   })
 
+  // Auto-sync effect
   useEffect(() => {
     if (!steamId || !config.steamAppId || !achievements.loaded) return
     try {
       if (localStorage.getItem(`game-tracker:${config.id}:steam-auto-synced`)) return
     } catch { /* noop */ }
-    autoImport.mutate()
+    syncSteam.mutate(undefined, {
+      onSuccess: (steamAchievements) => {
+        const steamNameMap: Record<string, string> = {}
+        config.achievements.forEach((a) => {
+          const key = (a.steamName || a.name).toLowerCase()
+          steamNameMap[key] = a.id
+        })
+        const next = { ...achievements.data }
+        let count = 0
+        steamAchievements.forEach((sa: { name: string; achieved: boolean }) => {
+          if (!sa.achieved) return
+          const id = steamNameMap[sa.name.toLowerCase()]
+          if (id && !next[id]) { next[id] = true; count++ }
+        })
+        if (count > 0) achievements.setAll(next)
+        try { localStorage.setItem(`game-tracker:${config.id}:steam-auto-synced`, '1') } catch { /* noop */ }
+      }
+    })
   }, [steamId, achievements.loaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleManualSync = () => {
+    if (!steamId || !config.steamAppId) return
+    syncSteam.mutate(undefined, {
+      onSuccess: (steamAchievements) => {
+        const steamNameMap: Record<string, { id: string; name: string }> = {}
+        config.achievements.forEach((a) => {
+          const key = (a.steamName || a.name).toLowerCase()
+          steamNameMap[key] = { id: a.id, name: a.name }
+        })
+        const next = { ...achievements.data }
+        let count = 0
+        steamAchievements.forEach((sa: { name: string; achieved: boolean }) => {
+          if (!sa.achieved) return
+          const match = steamNameMap[sa.name.toLowerCase()]
+          if (match && !next[match.id]) {
+            next[match.id] = true
+            count++
+            toast.success(`Achievement Unlocked: ${match.name}`)
+          }
+        })
+        if (count > 0) {
+          achievements.setAll(next)
+        } else {
+          toast.info('Steam sync complete. No new achievements found.')
+        }
+      },
+      onError: (err) => {
+        toast.error(`Failed to sync with Steam: ${err.message}`)
+      }
+    })
+  }
 
   // Favicon: set on mount, restore default on unmount
   useEffect(() => {
@@ -167,6 +205,9 @@ export function GameTracker({ config, steamId, preloadedAchievements }: GameTrac
         totalCount={totalCount}
         saving={saving}
         completionMessage={completionMessage}
+        showSyncButton={!!(steamId && config.steamAppId)}
+        onSyncClick={handleManualSync}
+        isSyncing={syncSteam.isPending}
       />
 
       {/* TAB BAR */}
