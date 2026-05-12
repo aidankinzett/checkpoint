@@ -1,3 +1,5 @@
+import { RefreshCw } from 'lucide-react';
+
 interface ProgressHeaderProps {
   title: string;
   subtitle?: string;
@@ -9,6 +11,9 @@ interface ProgressHeaderProps {
   totalCount: number;
   saving: boolean;
   completionMessage?: string;
+  showSyncButton?: boolean;
+  onSyncClick?: () => void;
+  isSyncing?: boolean;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -38,6 +43,9 @@ export function ProgressHeader({
   totalCount,
   saving,
   completionMessage,
+  showSyncButton,
+  onSyncClick,
+  isSyncing,
 }: ProgressHeaderProps) {
   const secondary = accentSecondary ?? accent;
   const lighter = lightenHex(accent, 30);
@@ -65,6 +73,19 @@ export function ProgressHeader({
             background: `radial-gradient(circle at 100% 0%, ${hexToRgba(accent, 0.08)} 0%, transparent 70%)`,
           }}
         />
+
+        {/* Sync Button */}
+        {showSyncButton && (
+          <button
+            onClick={onSyncClick}
+            disabled={isSyncing || !onSyncClick}
+            className="absolute top-5 right-5 p-2 rounded-full bg-[#1a1a24] border border-[#2a2a3a] text-[#888] hover:text-[#E8E8E8] hover:border-[#444] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10"
+            title="Sync with Steam"
+            aria-label="Sync with Steam"
+          >
+            <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />
+          </button>
+        )}
 
         {/* Title block */}
         <div className="text-center mb-6">
