@@ -15,7 +15,6 @@ export function useTrackedMap(storageKey: string): UseTrackedMapReturn {
   const { data: items } = useLiveQuery((q) =>
     q.from({ item: trackedItemsCollection })
       .where(({ item }) => eq(item.storageKey, storageKey))
-      .findAll()
   )
 
   const data = useMemo(() => {
@@ -39,21 +38,13 @@ export function useTrackedMap(storageKey: string): UseTrackedMapReturn {
     const isUnlocked = data[id] === true
 
     if (isUnlocked) {
-      trackedItemsCollection.delete(fullId).catch(() => {
-        trackedItemsCollection.update(fullId, (draft) => {
-          draft.unlocked = false
-        }).catch(() => {})
-      })
+      trackedItemsCollection.delete(fullId)
     } else {
       trackedItemsCollection.insert({
         id: fullId,
         storageKey,
         itemId: id,
         unlocked: true,
-      }).catch(() => {
-        trackedItemsCollection.update(fullId, (draft) => {
-          draft.unlocked = true
-        }).catch(() => {})
       })
     }
     setTimeout(() => setSaving(false), 400)
@@ -64,7 +55,7 @@ export function useTrackedMap(storageKey: string): UseTrackedMapReturn {
       setSaving(true)
       if (items) {
         for (const item of items) {
-          trackedItemsCollection.delete(item.id).catch(() => {})
+          trackedItemsCollection.delete(item.id)
         }
       }
       setTimeout(() => setSaving(false), 400)
@@ -81,13 +72,9 @@ export function useTrackedMap(storageKey: string): UseTrackedMapReturn {
           storageKey,
           itemId: id,
           unlocked: true,
-        }).catch(() => {
-          trackedItemsCollection.update(fullId, (draft) => {
-            draft.unlocked = true
-          }).catch(() => {})
         })
       } else {
-        trackedItemsCollection.delete(fullId).catch(() => {})
+        trackedItemsCollection.delete(fullId)
       }
     }
     setTimeout(() => setSaving(false), 400)
