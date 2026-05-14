@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { GameTracker } from '~/components/game-tracker/game-tracker'
 import { fetchGameSchema, fetchGlobalAchievementRatings, fetchGameLogo } from '~/server/steam-games'
+import { gameSchemaCollection } from '~/lib/db'
 import { fetchSteamAchievements } from '~/server/steam-achievements'
 import type { GameConfig, Achievement } from '~/games/types'
 import { useSession } from '~/hooks/use-session'
@@ -29,16 +30,42 @@ function SteamGamePage() {
     try { return localStorage.getItem(`steam-game-name:${appId}`) || `App ${appId}` } catch { return `App ${appId}` }
   })
 
-  const schemaQuery = useQuery({
-    queryKey: ['steam-schema', appId],
-    queryFn: () => fetchGameSchema({ data: { appId } }),
-    staleTime: 1000 * 60 * 60,
-  })
+  const combinedQuery = useQuery({
+    queryKey: ['steam-combined-schema', appId],
+    queryFn: async () => {
+      const cached = gameSchemaCollection.find(appId)
+      const now = Date.now()
+      const ONE_WEEK = 1000 * 60 * 60 * 24 * 7
 
-  const ratingsQuery = useQuery({
-    queryKey: ['steam-ratings', appId],
-    queryFn: () => fetchGlobalAchievementRatings({ data: { appId } }),
-    staleTime: 1000 * 60 * 60,
+      if (cached && (now - cached.timestamp < ONE_WEEK)) {
+        return cached
+      }
+
+      const achievements = await fetchGameSchema({ data: { appId } })
+
+      let ratings: { name: string, percent: number }[] = []
+      try {
+        ratings = await fetchGlobalAchievementRatings({ data: { appId } })
+      } catch (err) {
+        console.warn('Failed to fetch ratings:', err)
+      }
+
+      const newCache = {
+        appId,
+        timestamp: now,
+        achievements,
+        ratings,
+      }
+
+      if (cached) {
+        gameSchemaCollection.update(appId, newCache)
+      } else {
+        gameSchemaCollection.insert(newCache)
+      }
+
+      return newCache
+    },
+    staleTime: 1000 * 60 * 60 * 24 * 7,
   })
 
   const logoQuery = useQuery({
@@ -54,8 +81,8 @@ function SteamGamePage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const isLoading = schemaQuery.isLoading || ratingsQuery.isLoading
-  const error = schemaQuery.error
+  const isLoading = combinedQuery.isLoading
+  const error = combinedQuery.error
 
   if (isLoading) {
     return (
@@ -66,7 +93,7 @@ function SteamGamePage() {
     )
   }
 
-  if (error || !schemaQuery.data?.length) {
+  if (error || !combinedQuery.data?.achievements?.length) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-[#E8E8E8] flex flex-col items-center justify-center gap-3">
         <p className="text-[48px]">😕</p>
@@ -78,7 +105,7 @@ function SteamGamePage() {
   }
 
   const ratingMap = new Map(
-    (ratingsQuery.data ?? []).map(r => [r.name.toLowerCase(), r.percent])
+    (combinedQuery.data?.ratings ?? []).map(r => [r.name.toLowerCase(), r.percent])
   )
 
   const userAchievedSet = new Set(
@@ -87,7 +114,7 @@ function SteamGamePage() {
       .map(a => a.name.toLowerCase())
   )
 
-  const achievements: Achievement[] = schemaQuery.data.map(a => ({
+  const achievements: Achievement[] = (combinedQuery.data?.achievements ?? []).map(a => ({
     id: a.name,
     name: a.displayName || a.name,
     desc: a.description || '',
