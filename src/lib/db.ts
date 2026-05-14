@@ -18,3 +18,36 @@ export const trackedItemsCollection = createCollection(
     schema: trackedItemSchema,
   }),
 )
+
+
+export const steamAchievementSchemaSchema = z.object({
+  name: z.string(),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  hidden: z.number(),
+  icon: z.string(),
+  icongray: z.string(),
+})
+
+export const globalAchievementPercentSchema = z.object({
+  name: z.string(),
+  percent: z.number(),
+})
+
+export const gameSchemaCacheSchema = z.object({
+  appId: z.string(),
+  timestamp: z.number(),
+  achievements: z.array(steamAchievementSchemaSchema),
+  ratings: z.array(globalAchievementPercentSchema),
+})
+
+export type GameSchemaCache = z.infer<typeof gameSchemaCacheSchema>
+
+export const gameSchemaCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'game-schemas',
+    storageKey: 'app-game-schemas-v1',
+    getKey: (item) => item.appId,
+    schema: gameSchemaCacheSchema,
+  }),
+)
