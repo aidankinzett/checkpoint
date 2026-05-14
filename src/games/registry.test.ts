@@ -1,6 +1,6 @@
 import { expect, test, describe } from "vitest";
 import { getGame, getAllGames } from "./registry";
-import type { Achievement } from "./types";
+import type { Achievement } from "~/games/types";
 
 describe("games registry", () => {
   describe("getAllGames", () => {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useTrackedMap } from './use-tracked-map'
 import { trackedItemsCollection } from '~/lib/db'
 import * as reactDb from '@tanstack/react-db'
@@ -26,6 +26,10 @@ describe('useTrackedMap', () => {
   
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('initializes with no items', () => {
@@ -134,7 +138,6 @@ describe('useTrackedMap', () => {
       expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item1`)
       expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item2`)
       expect(result.current.saving).toBe(true)
-      vi.unstubAllGlobals()
     })
 
     it('does nothing when user cancels', () => {
@@ -152,7 +155,6 @@ describe('useTrackedMap', () => {
 
       expect(trackedItemsCollection.delete).not.toHaveBeenCalled()
       expect(result.current.saving).toBe(false)
-      vi.unstubAllGlobals()
     })
   })
 })
