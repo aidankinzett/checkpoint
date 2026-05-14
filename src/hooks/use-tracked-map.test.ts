@@ -100,13 +100,13 @@ describe('useTrackedMap', () => {
 
   it('sets all items correctly', () => {
     vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: [] } as any)
-    
+
     const { result } = renderHook(() => useTrackedMap(storageKey))
-    
+
     act(() => {
       result.current.setAll({ item1: true, item2: false })
     })
-    
+
     expect(trackedItemsCollection.insert).toHaveBeenCalledWith({
       id: `${storageKey}:item1`,
       storageKey,
@@ -114,5 +114,45 @@ describe('useTrackedMap', () => {
       unlocked: true,
     })
     expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item2`)
+  })
+
+  describe('reset', () => {
+    it('deletes all items when user confirms', () => {
+      const items = [
+        { id: `${storageKey}:item1`, storageKey, itemId: 'item1', unlocked: true },
+        { id: `${storageKey}:item2`, storageKey, itemId: 'item2', unlocked: true },
+      ]
+      vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: items } as any)
+      vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
+
+      const { result } = renderHook(() => useTrackedMap(storageKey))
+
+      act(() => {
+        result.current.reset()
+      })
+
+      expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item1`)
+      expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item2`)
+      expect(result.current.saving).toBe(true)
+      vi.unstubAllGlobals()
+    })
+
+    it('does nothing when user cancels', () => {
+      const items = [
+        { id: `${storageKey}:item1`, storageKey, itemId: 'item1', unlocked: true },
+      ]
+      vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: items } as any)
+      vi.stubGlobal('confirm', vi.fn().mockReturnValue(false))
+
+      const { result } = renderHook(() => useTrackedMap(storageKey))
+
+      act(() => {
+        result.current.reset()
+      })
+
+      expect(trackedItemsCollection.delete).not.toHaveBeenCalled()
+      expect(result.current.saving).toBe(false)
+      vi.unstubAllGlobals()
+    })
   })
 })

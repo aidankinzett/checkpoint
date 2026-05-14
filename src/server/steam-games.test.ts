@@ -79,6 +79,11 @@ describe('steam-games', () => {
       process.env.STEAM_API_KEY = ''
       await expect(fetchUserOwnedGames()).rejects.toThrow('STEAM_API_KEY is not configured')
     })
+
+    it('throws on HTTP error', async () => {
+      globalFetch.mockResolvedValueOnce({ ok: false, status: 503 })
+      await expect(fetchUserOwnedGames()).rejects.toThrow('Steam API error: 503')
+    })
   })
 
   describe('fetchGameSchema', () => {
@@ -96,6 +101,11 @@ describe('steam-games', () => {
         expect.stringContaining('GetSchemaForGame/v2/?key=test_key&appid=10')
       )
     })
+
+    it('throws on HTTP error', async () => {
+      globalFetch.mockResolvedValueOnce({ ok: false, status: 404 })
+      await expect(fetchGameSchema({ data: { appId: '10' } })).rejects.toThrow('Steam API error: 404')
+    })
   })
 
   describe('fetchGlobalAchievementRatings', () => {
@@ -109,6 +119,12 @@ describe('steam-games', () => {
 
       const result = await fetchGlobalAchievementRatings({ data: { appId: '10' } })
       expect(result).toEqual([{ name: 'ACH_1', percent: 50.5 }])
+    })
+
+    it('returns empty array on HTTP error', async () => {
+      globalFetch.mockResolvedValueOnce({ ok: false, status: 403 })
+      const result = await fetchGlobalAchievementRatings({ data: { appId: '10' } })
+      expect(result).toEqual([])
     })
   })
 
@@ -127,6 +143,19 @@ describe('steam-games', () => {
         expect.stringContaining('https://www.steamgriddb.com/api/v2/logos/steam/10'),
         { headers: { Authorization: 'Bearer test_griddb_key' } }
       )
+    })
+
+    it('returns null when STEAMGRIDDB_API_KEY is missing', async () => {
+      process.env.STEAMGRIDDB_API_KEY = ''
+      const result = await fetchGameLogo({ data: { appId: '10' } })
+      expect(result).toBeNull()
+      expect(globalFetch).not.toHaveBeenCalled()
+    })
+
+    it('returns null on HTTP error', async () => {
+      globalFetch.mockResolvedValueOnce({ ok: false, status: 404 })
+      const result = await fetchGameLogo({ data: { appId: '10' } })
+      expect(result).toBeNull()
     })
   })
 })
