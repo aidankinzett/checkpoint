@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchUserOwnedGames, fetchGameSchema, fetchGlobalAchievementRatings, fetchGameLogo } from './steam-games'
-import { auth } from './auth'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { fetchUserOwnedGames, fetchGameSchema, fetchGlobalAchievementRatings, fetchGameLogo } from '~/server/steam-games'
+import { auth } from '~/server/auth'
 
-vi.mock('./auth', () => ({
+vi.mock('~/server/auth', () => ({
   auth: {
     api: {
       getSession: vi.fn(),
@@ -33,17 +33,35 @@ vi.mock('@tanstack/react-start', async (importOriginal) => {
 })
 
 const globalFetch = vi.fn()
-global.fetch = globalFetch as any
+
+const originalFetch = global.fetch
+const originalSteamKey = process.env.STEAM_API_KEY
+const originalGridKey = process.env.STEAMGRIDDB_API_KEY
 
 describe('steam-games', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    global.fetch = globalFetch as any
     process.env.STEAM_API_KEY = 'test_key'
     process.env.STEAMGRIDDB_API_KEY = 'test_griddb_key'
-    
+
     vi.mocked(auth.api.getSession).mockResolvedValue({
       user: { steamId: '123456789' }
     } as any)
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    if (originalSteamKey === undefined) {
+      delete process.env.STEAM_API_KEY
+    } else {
+      process.env.STEAM_API_KEY = originalSteamKey
+    }
+    if (originalGridKey === undefined) {
+      delete process.env.STEAMGRIDDB_API_KEY
+    } else {
+      process.env.STEAMGRIDDB_API_KEY = originalGridKey
+    }
   })
 
   describe('fetchUserOwnedGames', () => {

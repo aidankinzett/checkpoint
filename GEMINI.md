@@ -86,7 +86,7 @@ Then register it in `src/games/registry.ts`.
 
 ## Environment Variables
 
-```
+```bash
 BETTER_AUTH_SECRET=    # random secret for session signing
 BETTER_AUTH_URL=       # full origin, e.g. https://checkpoint.example.com
 STEAM_API_KEY=         # Steam Web API key

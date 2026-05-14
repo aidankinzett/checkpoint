@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchSteamAchievements } from './steam-achievements'
-import { auth } from './auth'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { fetchSteamAchievements } from '~/server/steam-achievements'
+import { auth } from '~/server/auth'
 
-vi.mock('./auth', () => ({
+vi.mock('~/server/auth', () => ({
   auth: {
     api: {
       getSession: vi.fn(),
@@ -33,16 +33,28 @@ vi.mock('@tanstack/react-start', async (importOriginal) => {
 })
 
 const globalFetch = vi.fn()
-global.fetch = globalFetch as any
+
+const originalFetch = global.fetch
+const originalSteamKey = process.env.STEAM_API_KEY
 
 describe('steam-achievements', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    global.fetch = globalFetch as any
     process.env.STEAM_API_KEY = 'test_key'
-    
+
     vi.mocked(auth.api.getSession).mockResolvedValue({
       user: { steamId: '123456789' }
     } as any)
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    if (originalSteamKey === undefined) {
+      delete process.env.STEAM_API_KEY
+    } else {
+      process.env.STEAM_API_KEY = originalSteamKey
+    }
   })
 
   describe('fetchSteamAchievements', () => {
@@ -61,12 +73,12 @@ describe('steam-achievements', () => {
       })
 
       const result = await fetchSteamAchievements({ data: { appId: '10' } })
-      
+
       expect(result).toEqual([
         { name: 'ACH_1', achieved: true },
         { name: 'ACH_2', achieved: false },
       ])
-      
+
       expect(globalFetch).toHaveBeenCalledWith(
         expect.stringContaining('GetPlayerAchievements/v1/?key=test_key&steamid=123456789&appid=10')
       )
@@ -80,7 +92,7 @@ describe('steam-achievements', () => {
 
       await expect(fetchSteamAchievements({ data: { appId: '10' } })).rejects.toThrow('Steam API error: 404')
     })
-    
+
     it('throws when profile is private (success is false)', async () => {
       globalFetch.mockResolvedValueOnce({
         ok: true,
