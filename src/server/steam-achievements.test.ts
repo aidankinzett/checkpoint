@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { fetchSteamAchievements } from '~/server/steam-achievements'
-import { auth } from '~/server/auth'
+import { fetchSteamAchievements } from './steam-achievements'
+import { auth } from './auth'
 
-vi.mock('~/server/auth', () => ({
+vi.mock('./auth', () => ({
   auth: {
     api: {
       getSession: vi.fn(),

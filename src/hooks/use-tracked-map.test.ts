@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useTrackedMap } from '~/hooks/use-tracked-map'
+import { useTrackedMap } from './use-tracked-map'
 import { trackedItemsCollection } from '~/lib/db'
 import * as reactDb from '@tanstack/react-db'
 
