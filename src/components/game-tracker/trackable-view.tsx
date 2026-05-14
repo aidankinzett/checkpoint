@@ -4,6 +4,7 @@ import type { TrackableItem } from '~/games/types'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Checkbox } from '~/components/ui/checkbox'
+import { hexToRgba } from '~/lib/utils'
 
 interface TrackableViewProps {
   items: TrackableItem[]
@@ -16,12 +17,6 @@ interface TrackableViewProps {
   completedLabel: string
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${alpha})`
-}
 
 export function TrackableView({ items, categories, accent, completed, onToggle, onReset, itemLabel, completedLabel }: TrackableViewProps) {
   const [activeCategory, setActiveCategory] = useState("all")
