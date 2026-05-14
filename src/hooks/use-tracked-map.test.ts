@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useTrackedMap } from './use-tracked-map'
 import { trackedItemsCollection } from '~/lib/db'
 import * as reactDb from '@tanstack/react-db'
@@ -26,6 +26,10 @@ describe('useTrackedMap', () => {
   
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('initializes with no items', () => {
@@ -100,13 +104,13 @@ describe('useTrackedMap', () => {
 
   it('sets all items correctly', () => {
     vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: [] } as any)
-    
+
     const { result } = renderHook(() => useTrackedMap(storageKey))
-    
+
     act(() => {
       result.current.setAll({ item1: true, item2: false })
     })
-    
+
     expect(trackedItemsCollection.insert).toHaveBeenCalledWith({
       id: `${storageKey}:item1`,
       storageKey,
@@ -114,5 +118,43 @@ describe('useTrackedMap', () => {
       unlocked: true,
     })
     expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item2`)
+  })
+
+  describe('reset', () => {
+    it('deletes all items when user confirms', () => {
+      const items = [
+        { id: `${storageKey}:item1`, storageKey, itemId: 'item1', unlocked: true },
+        { id: `${storageKey}:item2`, storageKey, itemId: 'item2', unlocked: true },
+      ]
+      vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: items } as any)
+      vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
+
+      const { result } = renderHook(() => useTrackedMap(storageKey))
+
+      act(() => {
+        result.current.reset()
+      })
+
+      expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item1`)
+      expect(trackedItemsCollection.delete).toHaveBeenCalledWith(`${storageKey}:item2`)
+      expect(result.current.saving).toBe(true)
+    })
+
+    it('does nothing when user cancels', () => {
+      const items = [
+        { id: `${storageKey}:item1`, storageKey, itemId: 'item1', unlocked: true },
+      ]
+      vi.mocked(reactDb.useLiveQuery).mockReturnValue({ data: items } as any)
+      vi.stubGlobal('confirm', vi.fn().mockReturnValue(false))
+
+      const { result } = renderHook(() => useTrackedMap(storageKey))
+
+      act(() => {
+        result.current.reset()
+      })
+
+      expect(trackedItemsCollection.delete).not.toHaveBeenCalled()
+      expect(result.current.saving).toBe(false)
+    })
   })
 })

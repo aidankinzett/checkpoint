@@ -1,5 +1,6 @@
 import { expect, test, describe } from "vitest";
 import { getGame, getAllGames } from "./registry";
+import type { Achievement } from "~/games/types";
 
 describe("games registry", () => {
   describe("getAllGames", () => {
@@ -50,5 +51,43 @@ describe("games registry", () => {
       const game = getGame("Spider-Man-Remastered");
       expect(game).toBeUndefined();
     });
+  });
+
+  describe("game data integrity", () => {
+    const games = getAllGames();
+
+    for (const game of games) {
+      describe(`${game.id}`, () => {
+        test("achievements have no duplicate IDs", () => {
+          const ids = game.achievements.map((a: Achievement) => a.id);
+          const uniqueIds = new Set(ids);
+          expect(uniqueIds.size).toBe(ids.length);
+        });
+
+        test("all achievement tiers reference a key in tierConfig", () => {
+          for (const achievement of game.achievements) {
+            expect(game.tierConfig).toHaveProperty(achievement.tier);
+          }
+        });
+
+        test("all achievements have non-empty required fields", () => {
+          for (const achievement of game.achievements) {
+            expect(achievement.id.length).toBeGreaterThan(0);
+            expect(achievement.name.length).toBeGreaterThan(0);
+            expect(achievement.desc.length).toBeGreaterThan(0);
+            expect(achievement.guide.length).toBeGreaterThan(0);
+            expect(achievement.category.length).toBeGreaterThan(0);
+          }
+        });
+
+        test("extras have no duplicate item IDs within each type", () => {
+          for (const extra of game.extras ?? []) {
+            const ids = extra.items.map((item) => item.id);
+            const uniqueIds = new Set(ids);
+            expect(uniqueIds.size).toBe(ids.length);
+          }
+        });
+      });
+    }
   });
 });
