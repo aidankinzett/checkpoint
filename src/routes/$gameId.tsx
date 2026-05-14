@@ -15,12 +15,19 @@ function migrateSpidermanData() {
       ['spiderman-suits', 'game-tracker:spiderman-remastered:suits'],
       ['spiderman-steam-profile', 'game-tracker:spiderman-remastered:steam-profile'],
     ] as const
-    for (const [oldKey, newKey] of migrations) {
+    const updates = []
+    for (let i = 0; i < migrations.length; i++) {
+      const [oldKey, newKey] = migrations[i]
       const value = localStorage.getItem(oldKey)
       if (value && !localStorage.getItem(newKey)) {
-        localStorage.setItem(newKey, value)
-        localStorage.removeItem(oldKey)
+        updates.push({ oldKey, newKey, value })
       }
+    }
+
+    for (let i = 0; i < updates.length; i++) {
+      const { oldKey, newKey, value } = updates[i]
+      localStorage.setItem(newKey, value)
+      localStorage.removeItem(oldKey)
     }
     localStorage.setItem(migrationKey, '1')
   } catch { /* localStorage unavailable */ }
