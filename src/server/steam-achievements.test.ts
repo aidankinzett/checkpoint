@@ -10,27 +10,24 @@ vi.mock('./auth', () => ({
   }
 }))
 
-vi.mock('@tanstack/react-start', async (importOriginal) => {
-  const actual = await importOriginal<any>()
-  return {
-    ...actual,
-    createServerFn: () => {
-      let currentValidator = (x: any) => x
-      const builder = {
-        middleware: () => builder,
-        inputValidator: (v: any) => { currentValidator = v; return builder },
-        handler: (h: any) => {
-          return async (args: any) => {
-            const data = currentValidator(args?.data)
-            const context = { session: { user: { steamId: '123456789' } } }
-            return h({ data, context })
-          }
+vi.mock('@tanstack/react-start', () => ({
+  createMiddleware: () => ({ server: (fn: any) => fn, client: (fn: any) => fn }),
+  createServerFn: () => {
+    let validator: ((x: any) => any) | undefined
+    const builder = {
+      middleware: () => builder,
+      inputValidator: (v: any) => { validator = v; return builder },
+      handler: (h: any) => {
+        return async (args: any) => {
+          const data = typeof validator === 'function' ? validator(args?.data) : (args?.data ?? {})
+          const context = { session: { user: { steamId: '123456789' } } }
+          return h({ data, context })
         }
       }
-      return builder
     }
-  }
-})
+    return builder
+  },
+}))
 
 const globalFetch = vi.fn()
 
